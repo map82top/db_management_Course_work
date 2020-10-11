@@ -134,8 +134,8 @@ CREATE TABLE order_ (
 
 CREATE TABLE trade (
   match_id bigint PRIMARY KEY NOT NULL,
-  price money NOT NULL,
-  quantity int NOT NULL,
+  price money NOT NULL CONSTRAINT greater_than_zero CHECK(price > 0::money),
+  quantity int NOT NULL CONSTRAINT greater_than_zero_ CHECK(quantity > 0),
   buy_order_id bigint NOT NULL REFERENCES order_(id),
   sell_order_id bigint NOT NULL REFERENCES order_(id),
   trade_date timestamp NOT NULL CONSTRAINT date_validation CHECK (trade_date::date <= CURRENT_DATE)
