@@ -76,8 +76,8 @@ CREATE TABLE instrument_template (
 CREATE TABLE instrument (
         id int PRIMARY KEY,
         delete_date timestamp,
-        lot_size int,
-        trading_start_date timestamp,
+        lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
+        trading_start_date timestamp NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
         instrument_template_id smallint NOT NULL REFERENCES  instrument_template(id),
         market_id smallint NOT NULL REFERENCES market(id)
 );
