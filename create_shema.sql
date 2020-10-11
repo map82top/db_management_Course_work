@@ -143,10 +143,11 @@ CREATE TABLE trade (
 
 CREATE TABLE movement_fund (
   id bigint PRIMARY KEY,
-  amount money,
-  type type_movement_fund,
-  initiator_id int,
-  initiator_type initiator_type,
+  amount money NOT NULL CONSTRAINT positive_amount CHECK(amount > 0::money),
+  type type_movement_fund NOT NULL,
+  trader_initiator_id int REFERENCES trader(id) CONSTRAINT if_trader CHECK((initiator_type = 'trader' AND trader_initiator_id is not null) or trader_initiator_id is null),
+  broker_initiator_id int REFERENCES broker(id) CONSTRAINT if_broker CHECK((initiator_type = 'broker' AND broker_initiator_id is not null) or broker_initiator_id is null),
+  initiator_type initiator_type NOT NULL,
   account_id int NOT NULL REFERENCES account(number)
 );
 
