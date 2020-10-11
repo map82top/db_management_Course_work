@@ -121,13 +121,13 @@ CREATE TABLE depository (
 );
 
 CREATE TABLE order_ (
-  id bigint PRIMARY KEY,
-  place_time timestamp,
-  cancel_time timestamp,
-  price money,
-  quantity int,
-  status order_status,
-  side order_side,
+  id bigint PRIMARY KEY NOT NULL,
+  place_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cancel_time timestamp CONSTRAINT greater_than_place_time CHECK(cancel_time is not null and place_time < cancel_time or cancel_time is null),
+  price money NOT NULL CONSTRAINT greater_than_zero2 CHECK(price > 0::money),
+  quantity int NOT NULL CONSTRAINT greater_than_zero1 CHECK(quantity > 0),
+  status order_status NOT NULL default 'new',
+  side order_side NOT NULL,
   account int NOT NULL REFERENCES  account(number),
   instrument_id int NOT NULL REFERENCES instrument(id)
 );
