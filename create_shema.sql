@@ -133,12 +133,12 @@ CREATE TABLE order_ (
 );
 
 CREATE TABLE trade (
-  match_id bigint PRIMARY KEY,
-  price money,
-  quantity int,
+  match_id bigint PRIMARY KEY NOT NULL,
+  price money NOT NULL,
+  quantity int NOT NULL,
   buy_order_id bigint NOT NULL REFERENCES order_(id),
   sell_order_id bigint NOT NULL REFERENCES order_(id),
-  trade_date timestamp
+  trade_date timestamp NOT NULL CONSTRAINT date_validation CHECK (trade_date::date <= CURRENT_DATE)
 );
 
 CREATE TABLE movement_fund (
