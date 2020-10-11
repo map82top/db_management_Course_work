@@ -92,15 +92,15 @@ CREATE TABLE trader (
 );
 
 CREATE TABLE broker (
-      id int PRIMARY KEY,
+      id int PRIMARY KEY NOT NULL,
       legal_entity_identifier varchar,
       timezone smallint NOT NULL REFERENCES time_zone(id),
       country smallint NOT NULL REFERENCES country(id),
-      commission numeric(3, 2),
+      commission numeric(2) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.1::numeric),
       deleted_time timestamp,
-      actual_address varchar,
-      legal_address varchar,
-      name varchar
+      actual_address varchar(256) NOT NULL,
+      legal_address varchar(256) NOT NULL,
+      name varchar(100) NOT NULL
 );
 
 CREATE TABLE account (
