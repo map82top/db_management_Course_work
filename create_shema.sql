@@ -84,23 +84,23 @@ CREATE TABLE instrument (
 
 CREATE TABLE trader (
       id int PRIMARY KEY NOT NULL,
-      first_name varchar(20) NOT NULL,
-      last_name varchar(25) NOT NULL,
+      first_name varchar(20) NOT NULL CONSTRAINT only_alphabetic_fn CHECK(first_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
+      last_name varchar(25) NOT NULL CONSTRAINT only_alphabetic_ln CHECK(last_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
       timezone smallint NOT NULL REFERENCES time_zone(id),
       country smallint NOT NULL REFERENCES country(id),
       deleted_time timestamp 
 );
 
 CREATE TABLE broker (
-      id int PRIMARY KEY NOT NULL,
-      legal_entity_identifier varchar,
-      timezone smallint NOT NULL REFERENCES time_zone(id),
-      country smallint NOT NULL REFERENCES country(id),
-      commission numeric(2) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.1::numeric),
-      deleted_time timestamp,
-      actual_address varchar(256) NOT NULL,
-      legal_address varchar(256) NOT NULL,
-      name varchar(100) NOT NULL
+  id int PRIMARY KEY NOT NULL,
+  legal_entity_identifier varchar(20) not null CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
+  timezone smallint NOT NULL REFERENCES time_zone(id),
+  country smallint NOT NULL REFERENCES country(id),
+  commission numeric(2) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.1::numeric),
+  deleted_time timestamp,
+  actual_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  legal_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_la CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  name varchar(100) NOT NULL CONSTRAINT only_alphabetic_n CHECK(actual_address ~ '^[A-ZА-Яа-яa-z]+$')
 );
 
 CREATE TABLE account (
