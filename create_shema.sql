@@ -83,12 +83,12 @@ CREATE TABLE instrument (
 );
 
 CREATE TABLE trader (
-      id int PRIMARY KEY,
-      first_name varchar,
-      last_name varchar,
+      id int PRIMARY KEY NOT NULL,
+      first_name varchar(20) NOT NULL,
+      last_name varchar(25) NOT NULL,
       timezone smallint NOT NULL REFERENCES time_zone(id),
       country smallint NOT NULL REFERENCES country(id),
-      deleted_time timestamp
+      deleted_time timestamp 
 );
 
 CREATE TABLE broker (
