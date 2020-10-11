@@ -1,1 +1,1 @@
-docker exec -it study_postgres psql -U exchange-admin -h localhost -d exchange-db
+docker exec -it study_postgres psql -U exchange_system -h localhost -d exchange_db

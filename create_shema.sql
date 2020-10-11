@@ -57,28 +57,40 @@ CREATE TABLE market (
 );
 
 CREATE TABLE instrument_template (
-        id int PRIMARY KEY,
-        short_name varchar,
-        long_name varchar,
+        instrument_code varchar(6) PRIMARY KEY,
+        short_name varchar(20),
+        long_name varchar(256) NOT NULL,
         coupon_rate float,
         coupon_amount float,
         coupon_payment_frequency smallint,
-        isin varchar,
+        isin varchar(12) NOT NULL,
         maturity_date timestamp,
-        emission_volume float,
-        emission_date timestamp,
+        emission_volume float NOT NULL,
+        emission_date timestamp NOT NULL,
         delete_date timestamp,
-        nominal_price float,
-        instrument_type instrument_type,
+        nominal_price float NOT NULL,
+        instrument_type instrument_type NOT NULL,
         currency smallint NOT NULL REFERENCES currency(id)
 );
+
+ALTER TABLE instrument_template
+    ADD CONSTRAINT bond_required_coupon_rate CHECK(instrument_type = 'bond' AND instrument_type IS NOT NULL OR instrument_type IS NULL),
+    ADD CONSTRAINT bond_required_coupon_amount CHECK(instrument_type = 'bond' AND coupon_amount IS NOT NULL OR coupon_amount IS NULL),
+    ADD CONSTRAINT bond_required_coupon_payment_frequency CHECK(instrument_type = 'bond' AND coupon_payment_frequency IS NOT NULL OR coupon_payment_frequency IS NULL),
+    ADD CONSTRAINT bond_required_maturity_date CHECK(instrument_type = 'bond' AND maturity_date IS NOT NULL OR maturity_date IS NULL),
+    ADD CONSTRAINT instrument_code_template CHECK(instrument_code SIMILAR TO '[0-9]{4,6}'),
+    ADD CONSTRAINT isin_template CHECK(isin SIMILAR TO '[A-Za-z]{2}[A-Za-z0-9]{9}[0-9]'),
+    ADD CONSTRAINT emission_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > emission_date OR delete_date IS NULL),
+    ADD CONSTRAINT coupon_amount_more_zero CHECK(coupon_amount > 0),
+    ADD CONSTRAINT coupon_rate_zero CHECK(coupon_rate > 0),
+    ADD CONSTRAINT coupon_payment_frequency_more_zero CHECK(coupon_payment_frequency > 0);
 
 CREATE TABLE instrument (
         id int PRIMARY KEY,
         delete_date timestamp,
         lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
         trading_start_date timestamp NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
-        instrument_template_id smallint NOT NULL REFERENCES  instrument_template(id),
+        instrument_template_id varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
         market_id smallint NOT NULL REFERENCES market(id)
 );
 
