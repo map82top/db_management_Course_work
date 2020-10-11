@@ -2,7 +2,7 @@ CREATE TYPE type_movement_fund AS ENUM (
   'input',
   'output'
 );
-
+-- 
 CREATE TABLE currency (
   id smallint PRIMARY KEY,
   currency_name varchar
