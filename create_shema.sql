@@ -104,11 +104,11 @@ CREATE TABLE broker (
 );
 
 CREATE TABLE account (
-  number int PRIMARY KEY,
-  current_funds money,
+  number int PRIMARY KEY NOT NULL,
+  current_funds money NOT NULL DEFAULT 0 CONSTRAINT if_debet CHECK (type_account = 'debit' and current_funds > 0::money or type_account = 'credit'),
   trader_code int REFERENCES trader(id),
   broker_code int NOT NULL REFERENCES broker(id),
-  type_account type_account,
+  type_account type_account NOT NULL,
   type_currency smallint NOT NULL REFERENCES currency(id),
   deleted_time timestamp
 );
