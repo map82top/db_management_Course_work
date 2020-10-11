@@ -95,32 +95,32 @@ CREATE TABLE instrument (
 );
 
 CREATE TABLE trader (
-      id int PRIMARY KEY,
-      first_name varchar,
-      last_name varchar,
+      id int PRIMARY KEY NOT NULL,
+      first_name varchar(20) NOT NULL CONSTRAINT only_alphabetic_fn CHECK(first_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
+      last_name varchar(25) NOT NULL CONSTRAINT only_alphabetic_ln CHECK(last_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
       timezone smallint NOT NULL REFERENCES time_zone(id),
       country smallint NOT NULL REFERENCES country(id),
-      deleted_time timestamp
+      deleted_time timestamp 
 );
 
 CREATE TABLE broker (
-      id int PRIMARY KEY,
-      legal_entity_identifier varchar,
-      timezone smallint NOT NULL REFERENCES time_zone(id),
-      country smallint NOT NULL REFERENCES country(id),
-      commission numeric(3, 2),
-      deleted_time timestamp,
-      actual_address varchar,
-      legal_address varchar,
-      name varchar
+  id int PRIMARY KEY NOT NULL,
+  legal_entity_identifier varchar(20) not null CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
+  timezone smallint NOT NULL REFERENCES time_zone(id),
+  country smallint NOT NULL REFERENCES country(id),
+  commission numeric(2) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.1::numeric),
+  deleted_time timestamp,
+  actual_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  legal_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_la CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  name varchar(100) NOT NULL CONSTRAINT only_alphabetic_n CHECK(actual_address ~ '^[A-ZА-Яа-яa-z]+$')
 );
 
 CREATE TABLE account (
-  number int PRIMARY KEY,
-  current_funds money,
+  number int PRIMARY KEY NOT NULL,
+  current_funds money NOT NULL DEFAULT 0 CONSTRAINT if_debet CHECK (type_account = 'debit' and current_funds > 0::money or type_account = 'credit'),
   trader_code int REFERENCES trader(id),
   broker_code int NOT NULL REFERENCES broker(id),
-  type_account type_account,
+  type_account type_account NOT NULL,
   type_currency smallint NOT NULL REFERENCES currency(id),
   deleted_time timestamp
 );
@@ -145,20 +145,21 @@ CREATE TABLE order_ (
 );
 
 CREATE TABLE trade (
-  match_id bigint PRIMARY KEY,
-  price money,
-  quantity int,
+  match_id bigint PRIMARY KEY NOT NULL,
+  price money NOT NULL,
+  quantity int NOT NULL,
   buy_order_id bigint NOT NULL REFERENCES order_(id),
   sell_order_id bigint NOT NULL REFERENCES order_(id),
-  trade_date timestamp
+  trade_date timestamp NOT NULL CONSTRAINT date_validation CHECK (trade_date::date <= CURRENT_DATE)
 );
 
 CREATE TABLE movement_fund (
   id bigint PRIMARY KEY,
-  amount money,
-  type type_movement_fund,
-  initiator_id int,
-  initiator_type initiator_type,
+  amount money NOT NULL CONSTRAINT positive_amount CHECK(amount > 0::money),
+  type type_movement_fund NOT NULL,
+  trader_initiator_id int REFERENCES trader(id) CONSTRAINT if_trader CHECK((initiator_type = 'trader' AND trader_initiator_id is not null) or trader_initiator_id is null),
+  broker_initiator_id int REFERENCES broker(id) CONSTRAINT if_broker CHECK((initiator_type = 'broker' AND broker_initiator_id is not null) or broker_initiator_id is null),
+  initiator_type initiator_type NOT NULL,
   account_id int NOT NULL REFERENCES account(number)
 );
 
