@@ -49,9 +49,9 @@ CREATE TABLE time_zone (
 
 CREATE TABLE market (
         id int PRIMARY KEY,
-        name varchar,
-        open_time timestamp,
-        close_time timestamp,
+        name varchar(60) NOT NULL,
+        open_time timestamp NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
+        close_time timestamp NOT NULL,
         delete_date timestamp,
         currency smallint NOT NULL REFERENCES currency(id)
 );
@@ -78,8 +78,8 @@ ALTER TABLE instrument_template
     ADD CONSTRAINT bond_required_coupon_amount CHECK(instrument_type = 'bond' AND coupon_amount IS NOT NULL OR coupon_amount IS NULL),
     ADD CONSTRAINT bond_required_coupon_payment_frequency CHECK(instrument_type = 'bond' AND coupon_payment_frequency IS NOT NULL OR coupon_payment_frequency IS NULL),
     ADD CONSTRAINT bond_required_maturity_date CHECK(instrument_type = 'bond' AND maturity_date IS NOT NULL OR maturity_date IS NULL),
-    ADD CONSTRAINT instrument_code_template CHECK(instrument_code SIMILAR TO '[0-9]{4,6}'),
-    ADD CONSTRAINT isin_template CHECK(isin SIMILAR TO '[A-Za-z]{2}[A-Za-z0-9]{9}[0-9]'),
+    ADD CONSTRAINT instrument_code_template CHECK(instrument_code ~ '[0-9]{4,6}'),
+    ADD CONSTRAINT isin_template CHECK(isin ~ '[A-Za-z]{2}[A-Za-z0-9]{9}[0-9]'),
     ADD CONSTRAINT emission_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > emission_date OR delete_date IS NULL),
     ADD CONSTRAINT coupon_amount_more_zero CHECK(coupon_amount > 0),
     ADD CONSTRAINT coupon_rate_zero CHECK(coupon_rate > 0),

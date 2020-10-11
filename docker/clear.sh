@@ -1,0 +1,2 @@
+docker stop study_postgres
+docker rm study_postgres
