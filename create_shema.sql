@@ -4,7 +4,7 @@ CREATE TYPE type_movement_fund AS ENUM (
 );
 -- 
 CREATE TABLE currency (
-  id smallint PRIMARY KEY,
+  id smallserial PRIMARY KEY,
   currency_name varchar
 );
 
@@ -37,18 +37,18 @@ CREATE TYPE initiator_type AS ENUM (
 );
 
 CREATE TABLE country (
-  id smallint PRIMARY KEY,
-  country_name varchar
+  id smallserial PRIMARY KEY,
+  country_name varchar(50) UNIQUE
 );
 
 
 CREATE TABLE time_zone (
-  id smallint PRIMARY KEY,
-  utc_time_zone varchar
+  id smallserial PRIMARY KEY,
+  utc_time_zone varchar(5) UNIQUE
 );
 
 CREATE TABLE market (
-        id int PRIMARY KEY,
+        id serial PRIMARY KEY,
         name varchar(60) NOT NULL,
         open_time timestamp NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
         close_time timestamp NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE market (
 );
 
 CREATE TABLE instrument_template (
-        instrument_code varchar(6) PRIMARY KEY,
+        instrument_code varchar(6) UNIQUE PRIMARY KEY,
         short_name varchar(20),
         long_name varchar(256) NOT NULL,
         coupon_rate float,
@@ -86,7 +86,7 @@ ALTER TABLE instrument_template
     ADD CONSTRAINT coupon_payment_frequency_more_zero CHECK(coupon_payment_frequency > 0);
 
 CREATE TABLE instrument (
-        id int PRIMARY KEY,
+        id serial PRIMARY KEY,
         delete_date timestamp,
         lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
         trading_start_date timestamp NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
@@ -95,7 +95,7 @@ CREATE TABLE instrument (
 );
 
 CREATE TABLE trader (
-      id int PRIMARY KEY NOT NULL,
+      id serial PRIMARY KEY,
       first_name varchar(20) NOT NULL CONSTRAINT only_alphabetic_fn CHECK(first_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
       last_name varchar(25) NOT NULL CONSTRAINT only_alphabetic_ln CHECK(last_name ~ '^[A-ZА-Я][а-яa-z-]+$'),
       timezone smallint NOT NULL REFERENCES time_zone(id),
@@ -104,7 +104,7 @@ CREATE TABLE trader (
 );
 
 CREATE TABLE broker (
-  id int PRIMARY KEY NOT NULL,
+  id serial PRIMARY KEY,
   legal_entity_identifier varchar(20) not null CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
   timezone smallint NOT NULL REFERENCES time_zone(id),
   country smallint NOT NULL REFERENCES country(id),
@@ -116,7 +116,7 @@ CREATE TABLE broker (
 );
 
 CREATE TABLE account (
-  number int PRIMARY KEY NOT NULL,
+  number serial PRIMARY KEY,
   current_funds money NOT NULL DEFAULT 0 CONSTRAINT if_debet CHECK (type_account = 'debit' and current_funds > 0::money or type_account = 'credit'),
   trader_code int REFERENCES trader(id),
   broker_code int NOT NULL REFERENCES broker(id),
@@ -126,14 +126,14 @@ CREATE TABLE account (
 );
 
 CREATE TABLE depository (
-  id bigint PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   quantity int,
   instrument_id smallint NOT NULL REFERENCES  instrument(id),
   account_number int NOT NULL REFERENCES account(number)
 );
 
 CREATE TABLE order_ (
-  id bigint PRIMARY KEY NOT NULL,
+  id bigserial PRIMARY KEY,
   place_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   cancel_time timestamp CONSTRAINT greater_than_place_time CHECK(cancel_time is not null and place_time < cancel_time or cancel_time is null),
   price money NOT NULL CONSTRAINT greater_than_zero2 CHECK(price > 0::money),
@@ -145,7 +145,7 @@ CREATE TABLE order_ (
 );
 
 CREATE TABLE trade (
-  match_id bigint PRIMARY KEY NOT NULL,
+  match_id bigserial PRIMARY KEY,
   price money NOT NULL CONSTRAINT greater_than_zero CHECK(price > 0::money),
   quantity int NOT NULL CONSTRAINT greater_than_zero_ CHECK(quantity > 0),
   buy_order_id bigint NOT NULL REFERENCES order_(id),
@@ -154,7 +154,7 @@ CREATE TABLE trade (
 );
 
 CREATE TABLE movement_fund (
-  id bigint PRIMARY KEY,
+  id bigserial PRIMARY KEY,
   amount money NOT NULL CONSTRAINT positive_amount CHECK(amount > 0::money),
   type type_movement_fund NOT NULL,
   trader_initiator_id int REFERENCES trader(id) CONSTRAINT if_trader CHECK((initiator_type = 'trader' AND trader_initiator_id is not null) or trader_initiator_id is null),
