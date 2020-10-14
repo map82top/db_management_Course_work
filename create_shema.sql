@@ -5,7 +5,7 @@ CREATE TYPE type_movement_fund AS ENUM (
 -- 
 CREATE TABLE currency (
   id smallserial PRIMARY KEY,
-  currency_name varchar
+  currency_name varchar(10) UNIQUE
 );
 
 CREATE TYPE type_account AS ENUM (
@@ -105,22 +105,22 @@ CREATE TABLE trader (
 
 CREATE TABLE broker (
   id serial PRIMARY KEY,
-  legal_entity_identifier varchar(20) not null CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
+  legal_entity_identifier varchar(20) CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
   timezone smallint NOT NULL REFERENCES time_zone(id),
   country smallint NOT NULL REFERENCES country(id),
-  commission numeric(2) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.1::numeric),
+  commission numeric(4) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.01::numeric),
   deleted_time timestamp,
-  actual_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
-  legal_address varchar(256) NOT NULL CONSTRAINT only_alphabetic_la CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
-  name varchar(100) NOT NULL CONSTRAINT only_alphabetic_n CHECK(actual_address ~ '^[A-ZА-Яа-яa-z]+$')
+  actual_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  legal_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_la CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
+  name varchar(100) NOT NULL UNIQUE CONSTRAINT only_alphabetic_n CHECK(actual_address ~ '^[A-ZА-Яа-яa-z ]+$')
 );
 
 CREATE TABLE account (
   number serial PRIMARY KEY,
-  current_funds money NOT NULL DEFAULT 0 CONSTRAINT if_debet CHECK (type_account = 'debit' and current_funds > 0::money or type_account = 'credit'),
+  current_funds money NOT NULL DEFAULT 0 CONSTRAINT if_debet CHECK (type_account = 'debit' and current_funds >= 0::money or type_account = 'credit'),
   trader_code int REFERENCES trader(id),
   broker_code int NOT NULL REFERENCES broker(id),
-  type_account type_account NOT NULL,
+  type_account type_account NOT NULL DEFAULT 'debit',
   type_currency smallint NOT NULL REFERENCES currency(id),
   deleted_time timestamp
 );
