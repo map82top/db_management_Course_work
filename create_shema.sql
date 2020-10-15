@@ -110,9 +110,9 @@ CREATE TABLE broker (
   country smallint NOT NULL REFERENCES country(id),
   commission numeric(4) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.01::numeric),
   deleted_time timestamp,
-  actual_address varchar(256) NOT NULL UNIQUE,
-  legal_address varchar(256) NOT NULL UNIQUE,
-  name varchar(100) NOT NULL UNIQUE
+  actual_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[-\sA-Za-z]+$'),
+  legal_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_la CHECK(legal_address ~ '^[-\sA-Za-z]+$'),
+  name varchar(100) NOT NULL UNIQUE CONSTRAINT only_alphabetic_n CHECK(legal_address ~ '^[-\sA-Za-z]+$')
 );
 
 CREATE TABLE account (
