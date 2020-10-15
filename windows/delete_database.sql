@@ -1,0 +1,1 @@
+DROP DATABASE exchange_db WITH (FORCE);

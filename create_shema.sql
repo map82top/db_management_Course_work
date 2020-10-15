@@ -52,7 +52,7 @@ CREATE TABLE market (
         name varchar(60) NOT NULL,
         open_time timestamp NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
         close_time timestamp NOT NULL,
-        delete_date timestamp,
+        deleted_time timestamp,
         currency smallint NOT NULL REFERENCES currency(id)
 );
 
@@ -105,14 +105,14 @@ CREATE TABLE trader (
 
 CREATE TABLE broker (
   id serial PRIMARY KEY,
-  legal_entity_identifier varchar(20) CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[0-9A-Z]{20}$'),
+  legal_entity_identifier varchar(20) CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[A-Z0-9]+$'),
   timezone smallint NOT NULL REFERENCES time_zone(id),
   country smallint NOT NULL REFERENCES country(id),
   commission numeric(4) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.01::numeric),
   deleted_time timestamp,
-  actual_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
-  legal_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_la CHECK(actual_address ~ '^[A-ZА-Я а-яa-z,.-]+$'),
-  name varchar(100) NOT NULL UNIQUE CONSTRAINT only_alphabetic_n CHECK(actual_address ~ '^[A-ZА-Яа-яa-z ]+$')
+  actual_address varchar(256) NOT NULL UNIQUE,
+  legal_address varchar(256) NOT NULL UNIQUE,
+  name varchar(100) NOT NULL UNIQUE
 );
 
 CREATE TABLE account (
@@ -161,6 +161,12 @@ CREATE TABLE movement_fund (
   broker_initiator_id int REFERENCES broker(id) CONSTRAINT if_broker CHECK((initiator_type = 'broker' AND broker_initiator_id is not null) or broker_initiator_id is null),
   initiator_type initiator_type NOT NULL,
   account_id int NOT NULL REFERENCES account(number)
+);
+
+CREATE TABLE market_broker (
+  broker_id int NOT NULL REFERENCES broker(id),
+  market_id int NOT NULL REFERENCES market(id),
+  account_id smallint NOT NULL REFERENCES account(number)
 );
 
 
