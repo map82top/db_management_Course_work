@@ -25,7 +25,7 @@ CREATE TYPE order_side AS ENUM (
 
 CREATE TYPE order_status AS ENUM (
     'cancelled',
-    'partfilld',
+    'partfilled',
     'filled',
     'new'
 );
