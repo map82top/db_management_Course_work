@@ -47,8 +47,8 @@ BEGIN
         END IF;
     END IF;
 
-    IF CURRENT_TIMESTAMP > market.open_time AND CURRENT_TIMESTAMP < market.close_time THEN
-        RAISE EXCEPTION 'Market is open';
+    IF market.status != 'close' THEN
+        RAISE EXCEPTION 'Market not closed';
     END IF;
 
     INSERT INTO instrument (lot_size, trading_start_date, instrument_template_code, market_id)
@@ -93,8 +93,8 @@ BEGIN
 
     SELECT *  INTO market FROM market m WHERE m.id = instrument.market_id;
 
-    IF CURRENT_TIMESTAMP > market.open_time AND CURRENT_TIMESTAMP < market.close_time THEN
-        RAISE EXCEPTION 'Market is open';
+    IF market.status != 'close' THEN
+        RAISE EXCEPTION 'Market not closed';
     END IF;
 
     UPDATE instrument inst SET deleted_time = CURRENT_TIMESTAMP WHERE inst.id = delete_instrument.id;

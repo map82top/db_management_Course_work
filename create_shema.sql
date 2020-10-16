@@ -36,6 +36,11 @@ CREATE TYPE initiator_type AS ENUM (
     'system'
 );
 
+CREATE TYPE market_status AS ENUM (
+    'open',
+    'close'
+);
+
 CREATE TABLE country (
   id smallserial PRIMARY KEY,
   country_name varchar(50) UNIQUE
@@ -53,7 +58,8 @@ CREATE TABLE market (
         open_time timestamp NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
         close_time timestamp NOT NULL,
         deleted_time timestamp,
-        currency smallint NOT NULL REFERENCES currency(id)
+        currency smallint NOT NULL REFERENCES currency(id),
+        status market_status NOT NULL DEFAULT 'close'
 );
 
 CREATE TABLE instrument_template (
@@ -138,9 +144,11 @@ CREATE TABLE order_ (
   cancel_time timestamp CONSTRAINT greater_than_place_time CHECK(cancel_time is not null and place_time < cancel_time or cancel_time is null),
   price money NOT NULL CONSTRAINT greater_than_zero2 CHECK(price > 0::money),
   quantity int NOT NULL CONSTRAINT greater_than_zero1 CHECK(quantity > 0),
+  traded_qty int NOT NULL DEFAULT 0,
+  leaves_qty int NOT NULL CONSTRAINT qty_sum CHECK(traded_qty + leaves_qty = quantity),
   status order_status NOT NULL default 'new',
   side order_side NOT NULL,
-  account int NOT NULL REFERENCES  account(number),
+  account int NOT NULL REFERENCES account(number),
   instrument_id int NOT NULL REFERENCES instrument(id)
 );
 
