@@ -25,7 +25,7 @@ CREATE TYPE order_side AS ENUM (
 
 CREATE TYPE order_status AS ENUM (
     'cancelled',
-    'partfilld',
+    'partfilled',
     'filled',
     'new'
 );
@@ -34,6 +34,11 @@ CREATE TYPE initiator_type AS ENUM (
     'broker',
     'trader',
     'system'
+);
+
+CREATE TYPE market_status AS ENUM (
+    'open',
+    'close'
 );
 
 CREATE TABLE country (
@@ -49,11 +54,12 @@ CREATE TABLE time_zone (
 
 CREATE TABLE market (
         id serial PRIMARY KEY,
-        name varchar(60) NOT NULL,
+        name varchar(60) NOT NULL UNIQUE,
         open_time time NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
         close_time time NOT NULL,
         deleted_time timestamp,
-        currency smallint NOT NULL REFERENCES currency(id)
+        currency smallint NOT NULL REFERENCES currency(id),
+        status market_status NOT NULL DEFAULT 'close'
 );
 
 CREATE TABLE instrument_template (
@@ -89,8 +95,8 @@ CREATE TABLE instrument (
         id serial PRIMARY KEY,
         delete_date timestamp,
         lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
-        trading_start_date timestamp NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
-        instrument_template_id varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
+        trading_start_date date NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
+        instrument_template_code varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
         market_id smallint NOT NULL REFERENCES market(id)
 );
 
@@ -138,9 +144,11 @@ CREATE TABLE order_ (
   cancel_time timestamp CONSTRAINT greater_than_place_time CHECK(cancel_time is not null and place_time < cancel_time or cancel_time is null),
   price money NOT NULL CONSTRAINT greater_than_zero2 CHECK(price > 0::money),
   quantity int NOT NULL CONSTRAINT greater_than_zero1 CHECK(quantity > 0),
+  traded_qty int NOT NULL DEFAULT 0,
+  leaves_qty int NOT NULL CONSTRAINT qty_sum CHECK(traded_qty + leaves_qty = quantity),
   status order_status NOT NULL default 'new',
   side order_side NOT NULL,
-  account int NOT NULL REFERENCES  account(number),
+  account int NOT NULL REFERENCES account(number),
   instrument_id int NOT NULL REFERENCES instrument(id)
 );
 
