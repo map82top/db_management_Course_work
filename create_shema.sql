@@ -49,7 +49,7 @@ CREATE TABLE time_zone (
 
 CREATE TABLE market (
         id serial PRIMARY KEY,
-        name varchar(60) NOT NULL,
+        name varchar(60) NOT NULL UNIQUE,
         open_time timestamp NOT NULL CONSTRAINT open_time_less_close_time CHECK(open_time < close_time),
         close_time timestamp NOT NULL,
         deleted_time timestamp,
@@ -89,8 +89,8 @@ CREATE TABLE instrument (
         id serial PRIMARY KEY,
         delete_date timestamp,
         lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
-        trading_start_date timestamp NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
-        instrument_template_id varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
+        trading_start_date date NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
+        instrument_template_code varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
         market_id smallint NOT NULL REFERENCES market(id)
 );
 
