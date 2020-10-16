@@ -52,12 +52,12 @@ BEGIN
 
     raise notice 'Value: %', instrument_code;
     FOR instrument_ in 
-        SELECT * from instrument where instrument.instrument_template_id = instrument_code
+        SELECT * from instrument where instrument.instrument_template_code = instrument_code
     LOOP
         PERFORM delete_instrument(instrument_.id);
     END LOOP;
 
-    UPDATE instrument_template SET deleted_time = now() where instrument_template.instrument_code = remove_instrument_template.instrument_code;
+    UPDATE instrument_template SET delete_date = now() where instrument_template.instrument_code = remove_instrument_template.instrument_code;
 
 END;
 $BODY$

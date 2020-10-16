@@ -87,7 +87,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument not found';
     END IF;
 
-    IF instrument.deleted_time IS NOT NULL THEN
+    IF instrument.delete_date IS NOT NULL THEN
         RAISE EXCEPTION 'Instrument is deleted';
     END IF;
 
@@ -97,7 +97,7 @@ BEGIN
         RAISE EXCEPTION 'Market not closed';
     END IF;
 
-    UPDATE instrument inst SET deleted_time = CURRENT_TIMESTAMP WHERE inst.id = delete_instrument.id;
+    UPDATE instrument inst SET delete_date = CURRENT_TIMESTAMP WHERE inst.id = delete_instrument.id;
 
 END;
 $BODY$
