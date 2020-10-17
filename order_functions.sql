@@ -96,7 +96,7 @@ BEGIN
 
      IF account.type_account = 'debit' THEN
         IF price * quantity  + price * quantity * broker.commission + cost_over_orders > current_funds THEN
-            RAISE EXCEPTION 'Account`s fund is exceeded';
+            RAISE EXCEPTION 'Account`s funds is exceeded';
         END IF;
      END IF;
 

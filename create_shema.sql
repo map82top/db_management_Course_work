@@ -1,4 +1,4 @@
-CREATE TYPE type_movement_fund AS ENUM (
+CREATE TYPE direction AS ENUM (
   'input',
   'output'
 );
@@ -135,6 +135,7 @@ CREATE TABLE depository (
   id bigserial PRIMARY KEY,
   price money NOT NULL,
   quantity int NOT NULL,
+  direction direction NOT NULL,
   instrument_id smallint NOT NULL REFERENCES  instrument(id),
   account_number int NOT NULL REFERENCES account(number)
 );
@@ -165,7 +166,7 @@ CREATE TABLE trade (
 CREATE TABLE movement_fund (
   id bigserial PRIMARY KEY,
   amount money NOT NULL CONSTRAINT positive_amount CHECK(amount > 0::money),
-  type type_movement_fund NOT NULL,
+  direction direction NOT NULL,
   trader_initiator_id int REFERENCES trader(id) CONSTRAINT if_trader CHECK((initiator_type = 'trader' AND trader_initiator_id is not null) or trader_initiator_id is null),
   broker_initiator_id int REFERENCES broker(id) CONSTRAINT if_broker CHECK((initiator_type = 'broker' AND broker_initiator_id is not null) or broker_initiator_id is null),
   initiator_type initiator_type NOT NULL,

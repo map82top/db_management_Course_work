@@ -237,8 +237,8 @@ BEGIN
     END IF;
 
 
-     INSERT INTO depository (price, quantity, instrument_id, account_number) VALUES(bid_order.price, quantity, bid_order.instrument_id, bid_account.number);
-     INSERT INTO depository (price, quantity, instrument_id, account_number) VALUES(offer_order.price, quantity, offer_order.instrument_id, offer_account.number);
+     INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(bid_order.price, quantity, 'input', bid_order.instrument_id, bid_account.number);
+     INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(offer_order.price, quantity, 'output', offer_order.instrument_id, offer_account.number);
 
 
      INSERT INTO trade (price, quanity, buy_order_id, bid_order_id, offer_order_id, trade_date)

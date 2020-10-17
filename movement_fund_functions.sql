@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION make_trader_movement_fund(amount money, type_movement type_movement_fund, account_number int, description varchar(256))
+CREATE OR REPLACE FUNCTION make_trader_movement_fund(amount money, direction direction, account_number int, description varchar(256))
     RETURNS void AS
 $BODY$
 DECLARE
@@ -29,13 +29,13 @@ BEGIN
         RAISE EXCEPTION 'Trader is deleted';
      END IF;
 
-    PERFORM make_movement_fund(amount, type_movement, trader.id, 'trader', account.number, description);
+    PERFORM make_movement_fund(amount, direction, trader.id, 'trader', account.number, description);
 END;
 $BODY$
     LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION make_broker_movement_fund(amount money, type_movement type_movement_fund, account_number int, description varchar(256))
+CREATE OR REPLACE FUNCTION make_broker_movement_fund(amount money, direction direction, account_number int, description varchar(256))
     RETURNS void AS
 $BODY$
 DECLARE
@@ -66,13 +66,13 @@ BEGIN
         RAISE EXCEPTION 'Broker is deleted';
      END IF;
 
-    PERFORM make_movement_fund(amount, type_movement, broker.id, 'broker', account.number, description);
+    PERFORM make_movement_fund(amount, direction, broker.id, 'broker', account.number, description);
 END;
 $BODY$
     LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION make_movement_fund(amount money, type_movement type_movement_fund, initiator_id int, initiator_type initiator_type, account_number int, description varchar(256))
+CREATE OR REPLACE FUNCTION make_movement_fund(amount money, direction direction, initiator_id int, initiator_type initiator_type, account_number int, description varchar(256))
     RETURNS void AS
 $BODY$
 DECLARE
@@ -97,9 +97,9 @@ BEGIN
        RAISE EXCEPTION 'Account is deleted';
     END IF;
 
-    IF type_movement = 'output' THEN
+    IF direction = 'output' THEN
          new_current_funds = account.current_funds - amount;
-    ELSIF type_movement = 'input' THEN
+    ELSIF direction = 'input' THEN
          new_current_funds = account.current_funds + amount;
     ELSE
         RAISE EXCEPTION 'Unknown type of movement';
@@ -147,18 +147,18 @@ BEGIN
         RAISE EXCEPTION 'Unknown initiator_type';
     END IF;
 
-    IF new_current_funds < 0  AND initiator_type = 'trader' AND type_movement = 'output' THEN
+    IF new_current_funds < 0  AND initiator_type = 'trader' AND direction = 'output' THEN
         RAISE EXCEPTION 'From account is impossible take out more fund then has';
     END IF;
 
-    IF new_current_funds < 0 AND account.type_account = 'debit' AND type_movement = 'output' THEN
+    IF new_current_funds < 0 AND account.type_account = 'debit' AND direction = 'output' THEN
         RAISE EXCEPTION 'From debit account is impossible take out more fund then has';
     END IF;
 
     UPDATE account a SET current_fund = new_current_funds WHERE a.number = account_number;
 
     INSERT INTO movement_fund (amount, type, trader_initiator_id, broker_intitator_id, initiator_type, account_id, description)
-        VALUES(amount, type_movement, trader_initiator_id, broker_initiator_id, initiator_type, account_number, description);
+        VALUES(amount, direction, trader_initiator_id, broker_initiator_id, initiator_type, account_number, description);
 END;
 $BODY$
     LANGUAGE plpgsql;

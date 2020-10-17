@@ -29,3 +29,5 @@ docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_d
 echo Performed movement_fund_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../trade_functions.sql
 echo Performed trade_function
+docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../depository_functions.sql
+echo Performed depository_functions;
