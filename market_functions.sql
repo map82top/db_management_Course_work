@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION create_market_human(market_name varchar(60), open_time timestamp , clost_time timestamp, currency_name varchar(10))
+CREATE OR REPLACE FUNCTION create_market_human(market_name varchar(60), open_time timetz, clost_time timetz, currency_name varchar(10))
     RETURNS void AS
 $BODY$
 DECLARE
@@ -12,7 +12,7 @@ $BODY$
     LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION create_market(market_name varchar(60), open_time timestamp , clost_time timestamp, currency_id varchar(10))
+CREATE OR REPLACE FUNCTION create_market(market_name varchar(60), open_time timetz, clost_time timetz, currency_id smallint)
     RETURNS void AS
 $BODY$
 DECLARE
@@ -24,7 +24,7 @@ BEGIN
         RAISE EXCEPTION 'Currency not found';
     END IF;
 
-    INSERT INTO market (name, open_time, clost_time, currency, market_status) VALUES(market_name, open_time, clost_time, currency_id, DEFAULT);
+    INSERT INTO market (name, open_time, close_time, currency, status) VALUES(market_name, open_time, clost_time, currency_id, DEFAULT);
 END;
 $BODY$
 LANGUAGE plpgsql;

@@ -21,7 +21,7 @@ CREATE OR REPLACE FUNCTION create_broker(legal_entity_identifier varchar(20), ut
   RETURNS void AS
   $BODY$
 BEGIN
-  IF NOT EXISTS(SELECT * FROM time_zone where id = utc_time_zone_id) THEN
+  IF NOT EXISTS(SELECT id FROM time_zone where id = utc_time_zone_id) THEN
     RAISE EXCEPTION 'Time zone not found';
   END IF;
 
@@ -52,7 +52,7 @@ BEGIN
 
   SELECT id into currency_id from currency where currency.currency_name = currency_n;
 
-  raise notice 'Value: % - %', currency_id, currency_n;
+  raise notice 'Value: % - %', broker_name, broker_id;
 
   PERFORM add_broker_to_market(broker_id, market_id, currency_id);
 END;

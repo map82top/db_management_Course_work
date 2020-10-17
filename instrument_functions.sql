@@ -25,7 +25,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument template not found';
     END IF;
 
-    IF instrument_template.deleted_time IS NOT NULL THEN
+    IF instrument_template.delete_date IS NOT NULL THEN
         RAISE EXCEPTION 'Instrument template is deleted';
     END IF;
 
