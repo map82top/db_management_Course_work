@@ -71,8 +71,16 @@ BEGIN
         RAISE EXCEPTION 'Account is deleted';
      END IF;
 
+     IF account.current_funds < 0::money THEN
+        RAISE EXCEPTION 'Account`s current fund is less then zero. Impossible delete such account.';
+     END IF;
+
+     IF (SELECT COUNT(*) FROM order_ o WHERE o.account = account.number AND o.cancel_time IS NULL AND (o.status = 'cancelled' OR o.status = 'partfilled')) > 0 THEN
+        RAISE EXCEPTION 'Account has active orders. Impossible delete such account.';
+     END IF;
+
      IF account.current_funds > 0::money THEN
-        INSERT INTO movement_fund (amount, type, initiator_type, account_id) VALUES (account.current_funds, 'output', 'system', account.number);
+        INSERT INTO movement_fund (amount, type, initiator_type, account_id, description) VALUES (account.current_funds, 'output', 'system', account.number, 'Deleted account');
      END IF;
 
      UPDATE account ac SET deleted_time = now(), current_funds = 0 WHERE ac.number = delete_account.account_id;
