@@ -155,7 +155,7 @@ BEGIN
         RAISE EXCEPTION 'From debit account is impossible take out more fund then has';
     END IF;
 
-    UPDATE account a SET current_fund = new_current_fund WHERE a.number = account_number;
+    UPDATE account a SET current_fund = new_current_funds WHERE a.number = account_number;
 
     INSERT INTO movement_fund (amount, type, trader_initiator_id, broker_intitator_id, initiator_type, account_id, description)
         VALUES(amount, type_movement, trader_initiator_id, broker_initiator_id, initiator_type, account_number, description);
