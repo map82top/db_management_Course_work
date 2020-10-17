@@ -1,2 +1,1 @@
-docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../order_functions.sql
-docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../market_functions.sql
+s

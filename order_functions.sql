@@ -36,6 +36,7 @@ DECLARE
     instrument_template RECORD;
     market_broker RECORD;
     cost_over_orders money;
+    broker_market_account RECORD;
 BEGIN
     SELECT * INTO account FROM account ac WHERE ac.number = account_id;
 
@@ -71,11 +72,11 @@ BEGIN
         RAISE EXCEPTION 'Market is deleted';
      END IF;
 
-     IF market.currency = 'close' THEN
+     IF market.status = 'close' THEN
         RAISE EXCEPTION 'Market is closed';
      END IF;
 
-     IF market.status != account.type_currency THEN
+     IF market.currency != account.type_currency THEN
         RAISE EXCEPTION 'Currency market not equal currency account';
      END IF;
 
@@ -127,9 +128,19 @@ BEGIN
 
      SELECT * INTO market_broker FROM market_broker mb WHERE mb.broker_id = broker.id AND market.id = mb.market_id;
 
-      IF market_broker IS NULL THEN
+     IF market_broker IS NULL THEN
         RAISE EXCEPTION 'Broker not assign to order`s market';
      END IF;
+
+    SELECT * INTO broker_market_account FROM account a WHERE a.number = market_broker.account_id;
+
+    IF broker_market_account IS NULL THEN
+        RAISE EXCEPTION 'Broker market account not found';
+    END IF;
+
+    IF broker_market_account.deleted_time THEN
+       RAISE EXCEPTION 'Broker market account is deleted';
+    END IF;
 
     INSERT INTO order_ (place_time, price, quantity, leaves_qty, side, account, instrument_id)
         VALUES(CURRENT_TIMESTAMP, price, quantity, quantity, side, account, instrument_id);

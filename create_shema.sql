@@ -133,7 +133,8 @@ CREATE TABLE account (
 
 CREATE TABLE depository (
   id bigserial PRIMARY KEY,
-  quantity int,
+  price money NOT NULL,
+  quantity int NOT NULL,
   instrument_id smallint NOT NULL REFERENCES  instrument(id),
   account_number int NOT NULL REFERENCES account(number)
 );
@@ -156,8 +157,8 @@ CREATE TABLE trade (
   match_id bigserial PRIMARY KEY,
   price money NOT NULL CONSTRAINT greater_than_zero CHECK(price > 0::money),
   quantity int NOT NULL CONSTRAINT greater_than_zero_ CHECK(quantity > 0),
-  buy_order_id bigint NOT NULL REFERENCES order_(id),
-  sell_order_id bigint NOT NULL REFERENCES order_(id),
+  bid_order_id bigint NOT NULL REFERENCES order_(id),
+  offer_order_id bigint NOT NULL REFERENCES order_(id),
   trade_date timestamp NOT NULL CONSTRAINT date_validation CHECK (trade_date::date <= CURRENT_DATE)
 );
 
@@ -168,13 +169,14 @@ CREATE TABLE movement_fund (
   trader_initiator_id int REFERENCES trader(id) CONSTRAINT if_trader CHECK((initiator_type = 'trader' AND trader_initiator_id is not null) or trader_initiator_id is null),
   broker_initiator_id int REFERENCES broker(id) CONSTRAINT if_broker CHECK((initiator_type = 'broker' AND broker_initiator_id is not null) or broker_initiator_id is null),
   initiator_type initiator_type NOT NULL,
-  account_id int NOT NULL REFERENCES account(number)
+  account_id int NOT NULL REFERENCES account(number),
+  description varchar(256)
 );
 
 CREATE TABLE market_broker (
   broker_id int NOT NULL REFERENCES broker(id),
   market_id int NOT NULL REFERENCES market(id),
-  account_id smallint NOT NULL REFERENCES account(number)
+  account_id int NOT NULL REFERENCES account(number)
 );
 
 
