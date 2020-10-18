@@ -7,6 +7,8 @@ docker exec -i study_postgres psql -U postgres -h localhost < create_exchange_db
 echo Performed create_exchange_db
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../create_shema.sql
 echo Performed create_shema
+docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../helpers_functions.sql
+echo Performed helpers_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../account_functions.sql
 echo Performed account_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../trader_functions.sql

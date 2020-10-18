@@ -26,31 +26,14 @@ DECLARE
     trader_id int;
     broker RECORD;
 BEGIN
-     SELECT * INTO broker FROM broker b WHERE b.id = create_trader.broker_id;
+     SELECT * INTO broker FROM get_broker(broker_id);
 
-     IF broker IS NULL THEN
-        RAISE EXCEPTION 'Broker not found';
-     END IF;
-
-     IF broker.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Broker is deleted';
-     END IF;
-
-     IF NOT EXISTS (SELECT * FROM currency cur WHERE cur.id = create_trader.currency_id) THEN
-        RAISE EXCEPTION 'Currency not found';
-     END IF;
-
-     IF NOT EXISTS (SELECT * FROM country cnt WHERE cnt.id = create_trader.country_id) THEN
-        RAISE EXCEPTION 'Country not found';
-     END IF;
-
-     IF NOT EXISTS (SELECT * FROM time_zone tz WHERE tz.id = create_trader.time_zone_id) THEN
-        RAISE EXCEPTION 'Time zone not found';
-     END IF;
+     PERFORM time_zone_exist(time_zone_id);
+     PERFORM country_exist(country_id);
+     PERFORM currency_exist(currency_id);
 
      INSERT INTO trader(first_name, last_name, timezone, country) VALUES(first_name, last_name, time_zone_id, country_id)
      RETURNING id INTO trader_id;
-
 
      PERFORM create_account(trader_id, broker_id, 'debit', currency_id);
 END;
@@ -65,15 +48,7 @@ DECLARE
     trader RECORD;
     account RECORD;
 BEGIN
-     SELECT * INTO trader FROM trader tr WHERE tr.id = delete_trader.trader_id;
-
-     IF trader IS NULL THEN
-        RAISE EXCEPTION 'Trader not found';
-     END IF;
-
-     IF trader.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Trader is deleted';
-     END IF;
+     SELECT * INTO trader FROM get_trader(trader_id);
 
      FOR account IN
         SELECT * FROM account ac WHERE

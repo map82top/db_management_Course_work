@@ -19,25 +19,8 @@ DECLARE
     instrument_template RECORD;
     market RECORD;
 BEGIN
-    SELECT * INTO instrument_template FROM instrument_template it WHERE it.instrument_code = create_instrument.instrument_template_code;
-
-    IF instrument_template IS NULL THEN
-        RAISE EXCEPTION 'Instrument template not found';
-    END IF;
-
-    IF instrument_template.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Instrument template is deleted';
-    END IF;
-
-    SELECT * INTO market FROM market m WHERE m.id = create_instrument.market_id;
-
-    IF market IS NULL THEN
-        RAISE EXCEPTION 'Market not found';
-    END IF;
-
-    IF market.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Market is deleted';
-    END IF;
+    SELECT * INTO instrument_template FROM get_instrument_template(instrument_template_code);
+    SELECT * INTO market FROM get_market(market_id);
 
     IF trading_start_date IS NULL THEN
         trading_start_date = CURRENT_TIMESTAMP::date + interval '1 day';
@@ -74,24 +57,16 @@ END;
 $BODY$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION delete_instrument(id int)
+CREATE OR REPLACE FUNCTION delete_instrument(instrument_id int)
     RETURNS void AS
 $BODY$
 DECLARE
     instrument RECORD;
     market RECORD;
 BEGIN
-    SELECT * INTO instrument FROM instrument ins WHERE ins.id = delete_instrument.id;
+    SELECT * INTO instrument FROM get_instrument(instrument_id);
 
-    IF instrument IS NULL THEN
-        RAISE EXCEPTION 'Instrument not found';
-    END IF;
-
-    IF instrument.delete_date IS NOT NULL THEN
-        RAISE EXCEPTION 'Instrument is deleted';
-    END IF;
-
-    SELECT *  INTO market FROM market m WHERE m.id = instrument.market_id;
+    SELECT * INTO market FROM  get_market(instrument.market_id);
 
     IF market.status != 'close' THEN
         RAISE EXCEPTION 'Market not closed';

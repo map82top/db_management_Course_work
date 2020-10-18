@@ -73,7 +73,7 @@ CREATE TABLE instrument_template (
         maturity_date timestamp,
         emission_volume bigint NOT NULL,
         emission_date timestamp NOT NULL,
-        delete_date timestamp,
+        deleted_time timestamp,
         nominal_price numeric(2) NOT NULL,
         instrument_type instrument_type NOT NULL,
         currency smallint NOT NULL REFERENCES currency(id)
