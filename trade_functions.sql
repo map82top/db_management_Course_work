@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION create_trader(bid_order_id bigint, offer_order_id bigint, quantity int)
+CREATE OR REPLACE FUNCTION create_trade(bid_order_id bigint, offer_order_id bigint, quantity int)
     RETURNS void AS
 $BODY$
 DECLARE
@@ -33,7 +33,7 @@ BEGIN
         RAISE EXCEPTION 'Order is cancelled';
      END IF;
 
-     IF bid_order.status != 'filled' THEN
+     IF bid_order.status = 'filled' THEN
         RAISE EXCEPTION 'Order is filled';
      END IF;
 
@@ -47,23 +47,23 @@ BEGIN
         RAISE EXCEPTION 'Order is cancelled';
      END IF;
 
-     IF offer_order.status != 'filled' THEN
+     IF offer_order.status = 'filled' THEN
         RAISE EXCEPTION 'Order is filled';
      END IF;
 
-     IF offer_order.side = 'bid' AND bid_oder = 'bid' OR offer_order.side = 'offer' AND bid_oder = 'offer' THEN
+     IF offer_order.side = 'bid' AND bid_order.side = 'bid' OR offer_order.side = 'offer' AND bid_order.side = 'offer' THEN
         RAISE EXCEPTION 'Both orders is on same side';
      END IF;
 
-     IF offer_order.price <> bid_price.price THEN
+     IF offer_order.price <> bid_order.price THEN
         RAISE EXCEPTION 'Price of traded orders isn`t equal';
      END IF;
 
-     IF offer_order.instrument_id <> bid_price.instrument_id THEN
+     IF offer_order.instrument_id <> bid_order.instrument_id THEN
         RAISE EXCEPTION 'Instrument of traded orders not equal';
      END IF;
 
-     IF offer_order.account <> bid_price.account THEN
+     IF offer_order.account = bid_order.account THEN
         RAISE EXCEPTION 'Self trading not available';
      END IF;
 
@@ -101,7 +101,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument not found';
      END IF;
 
-     IF instrument.deleted_time THEN
+     IF instrument.delete_date THEN
         RAISE EXCEPTION 'Instrument is deleted';
      END IF;
 
@@ -131,13 +131,13 @@ BEGIN
         RAISE EXCEPTION 'Currency market not equal currency bid account';
      END IF;
 
-    SELECT * INTO instrument_template FROM instrument_template it WHERE it.insrument_code = instrument.instrument_template_code;
+    SELECT * INTO instrument_template FROM instrument_template it WHERE it.instrument_code = instrument.instrument_template_code;
 
      IF instrument_template IS NULL THEN
         RAISE EXCEPTION 'Instrument template not found';
      END IF;
 
-     IF instrument_template.deleted_time THEN
+     IF instrument_template.delete_date THEN
         RAISE EXCEPTION 'Instrument template is deleted';
      END IF;
 
@@ -197,8 +197,8 @@ BEGIN
         RAISE EXCEPTION 'Offer broker account is deleted';
      END IF;
 
-     PERFORM trade_order(bid_order, quantity);
-     PERFORM trade_order(offer_order, quantity);
+     PERFORM trade_order(bid_order.id, quantity);
+     PERFORM trade_order(offer_order.id, quantity);
 
     IF bid_account.trader_code IS NOT NULL THEN
      SELECT * INTO bid_trader FROM trader t WHERE t.id = bid_account.trader_code;
@@ -209,13 +209,13 @@ BEGIN
         IF bid_trader.deleted_time THEN
            RAISE EXCEPTION 'Bid trader is deleted';
         END IF;
-
-     PERFORM make_movement_fund(bid_order.price * quantity, 'output', NULL, 'system', bid_account.number, 'buying ' + instrument_template.short_name);
-     PERFORM make_movement_fund(bid_order.price * quantity * bid_broker.commission, 'output', NULL, 'system', bid_account.number, 'broker commission per buying ' + instrument_template.short_name);
+      raise notice 'Values % - % - %', bid_order.price, quantity, bid_broker.commission;
+     PERFORM make_movement_fund(bid_order.price * quantity, 'output', NULL, 'system', bid_account.number, 'buying ' || instrument_template.short_name);
+     PERFORM make_movement_fund(bid_order.price * quantity * bid_broker.commission, 'output', NULL, 'system', bid_account.number, 'broker commission per buying ' || instrument_template.short_name);
      PERFORM make_movement_fund(bid_order.price * quantity * bid_broker.commission, 'input', NULL, 'system', bid_broker_account.number,
-        'commission per buying ' + instrument_template.short_name + ' trader: ' + bid_trader.first_name + ' ' + bid_trader.last_name);
+        'commission per buying ' || instrument_template.short_name || ' trader: ' || bid_trader.first_name || ' ' || bid_trader.last_name);
     ELSE
-     PERFORM make_movement_fund(bid_order.price * quantity, 'output', NULL, 'system', bid_broker_account.number, 'selling ' + instrument_template.short_name);
+     PERFORM make_movement_fund(bid_order.price * quantity, 'output', NULL, 'system', bid_broker_account.number, 'selling ' || instrument_template.short_name);
     END IF;
 
     IF offer_account.trader_code IS NOT NULL THEN
@@ -228,12 +228,12 @@ BEGIN
             RAISE EXCEPTION 'Offer trader is deleted';
         END IF;
 
-     PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_account.number, 'selling ' + instrument_template.short_name);
-     PERFORM make_movement_fund(offer_order.price * quantity * offer_broker.commision, 'output', NULL, 'system', offer_account.number, 'broker commission per selling ' + instrument_template.short_name);
+     PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_account.number, 'selling ' || instrument_template.short_name);
+     PERFORM make_movement_fund(offer_order.price * quantity * offer_broker.commission, 'output', NULL, 'system', offer_account.number, 'broker commission per selling ' || instrument_template.short_name);
      PERFORM make_movement_fund(offer_order.price * quantity * offer_broker.commission, 'input', NULL, 'system', offer_broker_account.number,
-        'commission per selling ' + instrument_template.short_name + ' trader: ' + offer_trader.first_name + ' ' + offer_trader.last_name);
+        'commission per selling ' || instrument_template.short_name || ' trader: ' || offer_trader.first_name || ' ' || offer_trader.last_name);
     ELSE
-     PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_broker_account.number, 'selling ' + instrument_template.short_name);
+     PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_broker_account.number, 'selling ' || instrument_template.short_name);
     END IF;
 
 
@@ -241,7 +241,7 @@ BEGIN
      INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(offer_order.price, quantity, 'output', offer_order.instrument_id, offer_account.number);
 
 
-     INSERT INTO trade (price, quanity, buy_order_id, bid_order_id, offer_order_id, trade_date)
+     INSERT INTO trade (price, quantity, bid_order_id, offer_order_id, trade_date)
         VALUES(bid_order.price, quantity, bid_order_id, offer_order_id, CURRENT_TIMESTAMP);
 END;
 $BODY$

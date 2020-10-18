@@ -103,7 +103,7 @@ $BODY$
 DECLARE
      market RECORD;
 BEGIN
-     SELECT * INTO market FROM market m WHERE m.id = delete_market.market_id;
+     SELECT * INTO market FROM market m WHERE m.id = open_market.market_id;
 
      IF market IS NULL THEN
         RAISE EXCEPTION 'Market not found';
@@ -117,7 +117,7 @@ BEGIN
         RAISE EXCEPTION 'Market not closed';
      END IF;
 
-     UPDATE market m SET m.status = 'open' WHERE m.id = open_market.market_id;
+     UPDATE market m SET status = 'open' WHERE m.id = open_market.market_id;
 END;
 $BODY$
     LANGUAGE plpgsql;
@@ -129,7 +129,7 @@ $BODY$
 DECLARE
     market_id int;
 BEGIN
-    SELECT id INTO market_id FROM market m WHERE m.name = open_market_human.market_name;
+    SELECT id INTO market_id FROM market m WHERE m.name = close_market_human.market_name;
 
     PERFORM close_market(market_id);
 END;
@@ -144,7 +144,7 @@ DECLARE
      market RECORD;
      order_id bigint;
 BEGIN
-     SELECT * INTO market FROM market m WHERE m.id = delete_market.market_id;
+     SELECT * INTO market FROM market m WHERE m.id = close_market.market_id;
 
      IF market IS NULL THEN
         RAISE EXCEPTION 'Market not found';
@@ -160,13 +160,13 @@ BEGIN
 
      FOR order_id IN
         SELECT o.id FROM instrument inst JOIN order_ o ON inst.id = o.instrument_id
-        WHERE inst.deleted_time IS NULL AND inst.market_id = market.id
+        WHERE inst.delete_date IS NULL AND inst.market_id = market.id
             AND o.cancel_time IS NULL AND o.status != 'cancelled' AND o.status != 'filled'
      LOOP
         PERFORM cancel_order(order_id);
      END LOOP;
 
-     UPDATE market m SET m.status = 'close' WHERE m.id = open_market.market_id;
+     UPDATE market SET status = 'close' WHERE id = close_market.market_id;
 END;
 $BODY$
     LANGUAGE plpgsql;

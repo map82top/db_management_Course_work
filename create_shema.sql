@@ -114,7 +114,7 @@ CREATE TABLE broker (
   legal_entity_identifier varchar(20) CONSTRAINT lei_regexp CHECK(legal_entity_identifier ~ '^[A-Z0-9]+$'),
   timezone smallint NOT NULL REFERENCES time_zone(id),
   country smallint NOT NULL REFERENCES country(id),
-  commission numeric(4) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.01::numeric),
+  commission numeric(6, 4) NOT NULL CONSTRAINT commission_is_leq_one_and_geq_zero CHECK(commission >= 0::numeric and commission <= 0.01::numeric),
   deleted_time timestamp,
   actual_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_aa CHECK(actual_address ~ '^[-\sA-Za-z0-9,.]+$'),
   legal_address varchar(256) NOT NULL UNIQUE CONSTRAINT only_alphabetic_la CHECK(legal_address ~ '^[-\sA-Za-z0-9,.]+$'),

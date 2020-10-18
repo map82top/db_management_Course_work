@@ -7,5 +7,9 @@ psql -U postgres -h localhost -d exchange_db -f ../account_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../instrument_template_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../instrument_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../market_functions.sql
+echo market_functions
 psql -U postgres -h localhost -d exchange_db -f ../order_functions.sql
-psql -U postgres -h localhost -d exchange_db -f test_instrument_template.sql
+psql -U postgres -h localhost -d exchange_db -f ../movement_fund_functions.sql
+psql -U postgres -h localhost -d exchange_db -f ../trade_functions.sql
+psql -U postgres -h localhost -d exchange_db -f ../depository_functions.sql
+psql -U postgres -h localhost -d exchange_db -f ../tests/test_data.sql

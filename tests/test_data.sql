@@ -27,11 +27,108 @@ select add_instrument_template_human('482801','Fgz','Obotljqirijpufbfklmtqfpthoj
 select add_instrument_template_human('1877','Tlvgimmfbwm','Emrvbfrjhhsqessgcjmegkcvushdzvle',1.0,1.0,1::smallint,'UhoVTOMcgDz6',1000,2.0,'bond','RUB');
 select add_instrument_template_human('06806','Pzqqm','Qeqxgibrclvruwpcewfnaoiwribeqpw',null,null,null,'LoXm5WoI0t81',1000,2.0,'share','RUB');
 
-select create_instrument_human(73,'482801','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
-select create_instrument_human(21,'1877','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
-select create_instrument_human(27,'06806','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
-select create_instrument_human(22,'482801','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
-select create_instrument_human(67,'1877','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
-select create_instrument_human(15,'06806','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'482801','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'1877','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'06806','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'482801','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'1877','SPSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
+select create_instrument_human(10,'06806','MSE',(CURRENT_TIMESTAMP + interval '1 day')::date);
 
+select make_broker_movement_fund(1000000::money,'input',7,'initial input');
+select make_broker_movement_fund(1000000::money,'input',8,'initial input');
+select make_broker_movement_fund(1000000::money,'input',9,'initial input');
+select make_broker_movement_fund(1000000::money,'input',10,'initial input');
+select make_broker_movement_fund(1000000::money,'input',11,'initial input');
+select make_broker_movement_fund(1000000::money,'input',12,'initial input');
+select make_trader_movement_fund(100000::money,'input',1,'initial input');
+select make_trader_movement_fund(100000::money,'input',2,'initial input');
+select make_trader_movement_fund(100000::money,'input',3,'initial input');
+select make_trader_movement_fund(100000::money,'input',4,'initial input');
+select make_trader_movement_fund(100000::money,'input',5,'initial input');
+select make_trader_movement_fund(100000::money,'input',6,'initial input');
 
+select initial_placement_human(10.0::money,10000,'Calentos','SPSE','482801');
+select initial_placement_human(10.0::money,10000,'Alpha','MSE','1877');
+select initial_placement_human(10.0::money,10000,'Betta','SPSE','06806');
+select initial_placement_human(10.0::money,10000,'Calentos','MSE','482801');
+select initial_placement_human(10.0::money,10000,'Alpha','SPSE','1877');
+select initial_placement_human(10.0::money,10000,'Betta','MSE','06806');
+
+select open_market_human('MSE');
+select open_market_human('SPSE');
+
+select create_order(1,1,10::money,20,'bid');
+select create_order(4,1,10::money,30,'bid');
+select create_order(1,1,10::money,20,'offer');
+select create_order(4,1,10::money,10,'offer');
+select create_order(4,1,10::money,20,'offer');
+
+select create_order(2,2,10::money,20,'bid');
+select create_order(5,2,10::money,30,'bid');
+select create_order(2,2,10::money,20,'offer');
+select create_order(5,2,10::money,10,'offer');
+select create_order(5,2,10::money,20,'offer');
+
+select create_order(3,3,10::money,20,'bid');
+select create_order(6,3,10::money,30,'bid');
+select create_order(3,3,10::money,20,'offer');
+select create_order(6,3,10::money,10,'offer');
+select create_order(6,3,10::money,20,'offer');
+
+select create_order(1,4,10::money,20,'bid');
+select create_order(4,4,10::money,30,'bid');
+select create_order(1,4,10::money,20,'offer');
+select create_order(4,4,10::money,10,'offer');
+select create_order(4,4,10::money,20,'offer');
+
+select create_order(2,5,10::money,20,'bid');
+select create_order(5,5,10::money,30,'bid');
+select create_order(2,5,10::money,20,'offer');
+select create_order(5,5,10::money,10,'offer');
+select create_order(5,5,10::money,20,'offer');
+
+select create_order(3,6,10::money,20,'bid');
+select create_order(6,6,10::money,30,'bid');
+select create_order(3,6,10::money,20,'offer');
+select create_order(6,6,10::money,10,'offer');
+select create_order(6,6,10::money,20,'offer');
+
+select create_trade(1, 4, 10);
+select create_trade(1, 5, 10);
+select create_trade(2, 3, 10);
+select create_trade(2, 3, 10);
+
+select create_trade(6, 9, 10);
+select create_trade(6, 10, 10);
+select create_trade(7, 8, 10);
+select create_trade(7, 8, 10);
+
+select create_trade(11, 14, 10);
+select create_trade(11, 15, 10);
+select create_trade(12, 13, 10);
+select create_trade(12, 13, 10);
+
+select create_trade(16, 19, 10);
+select create_trade(16, 20, 10);
+select create_trade(17, 18, 10);
+select create_trade(17, 18, 10);
+
+select create_trade(21, 24, 10);
+select create_trade(21, 25, 10);
+select create_trade(22, 23, 10);
+select create_trade(22, 23, 10);
+
+select create_trade(26, 29, 10);
+select create_trade(26, 30, 10);
+select create_trade(27, 28, 10);
+select create_trade(27, 28, 10);
+
+select close_market_human('MSE');
+select close_market_human('SPSE');
+
+select make_broker_movement_fund(1::money,'output',7,'output test');
+select make_broker_movement_fund(1::money,'output',8,'output test');
+select make_broker_movement_fund(1::money,'output',9,'output test');
+select make_broker_movement_fund(1::money,'output',10,'output test');
+select make_broker_movement_fund(1::money,'output',11,'output test');
+select make_broker_movement_fund(1::money,'output',12,'output test');

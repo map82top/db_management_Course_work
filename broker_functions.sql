@@ -39,12 +39,13 @@ $BODY$
 -- Adding broker to market functions
 
 CREATE OR REPLACE FUNCTION add_broker_to_market_human(broker_name varchar(100), market_name varchar(60), currency_n varchar(10))
-  RETURNS void AS
+  RETURNS int AS
   $BODY$
 DECLARE
   broker_id int;
   market_id int;
   currency_id smallint;
+  account_id int;
 BEGIN
   SELECT id into broker_id from broker where broker_name = broker.name;
 
@@ -54,13 +55,14 @@ BEGIN
 
   raise notice 'Value: % - %', broker_name, broker_id;
 
-  PERFORM add_broker_to_market(broker_id, market_id, currency_id);
+  Select add_broker_to_market(broker_id, market_id, currency_id) into account_id;
+  RETURN(account_id);
 END;
 $BODY$
   LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION add_broker_to_market(broker_id int, market_id int, currency_id smallint)
-  RETURNS void AS
+  RETURNS int AS
   $BODY$
 DECLARE
   broker_ RECORD;
@@ -92,11 +94,13 @@ BEGIN
 
   IF currency_ is null THEN
     RAISE EXCEPTION 'Currency not found';
-  END IF;
+  END IF;  
 
-  PERFORM create_account(NULL, broker_id, 'debit', currency_id);
+  select create_account(NULL, broker_id, 'debit', currency_id) into account_id;
 
-  INSERT into market_broker VALUES(broker_id, market_id, currency_id);
+  INSERT into market_broker VALUES(broker_id, market_id, account_id);
+
+  RETURN (SELECT account_id);
 END;
 $BODY$
   LANGUAGE plpgsql;

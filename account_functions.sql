@@ -17,11 +17,12 @@ $BODY$
 
 
 CREATE OR REPLACE FUNCTION create_account(trader_id int, broker_id int, type_account type_account, currency_id smallint)
-    RETURNS void AS
+    RETURNS int AS
 $BODY$
 DECLARE
      trader RECORD;
      broker RECORD;
+     account_id int;
 BEGIN
      IF trader_id IS NOT NULL THEN
         SELECT * INTO trader FROM trader t WHERE t.id = create_account.trader_id;
@@ -49,7 +50,11 @@ BEGIN
         RAISE EXCEPTION 'Currency not found';
      END IF;
 
-     INSERT INTO account (current_funds, trader_code, broker_code, type_account, type_currency) VALUES(DEFAULT, trader_id, broker_id, type_account, currency_id);
+     INSERT INTO account (current_funds, trader_code, broker_code, type_account, type_currency) VALUES(DEFAULT, trader_id, broker_id, type_account, currency_id)
+     RETURNING number into account_id;
+
+
+     RETURN(SELECT account_id);
 END;
 $BODY$
     LANGUAGE plpgsql;

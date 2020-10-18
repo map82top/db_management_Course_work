@@ -14,11 +14,11 @@ BEGIN
         RAISE EXCEPTION 'Order is cancelled';
      END IF;
 
-     IF order_.status != 'filled' THEN
+     IF order_.status = 'filled' THEN
         RAISE EXCEPTION 'Order is filled';
      END IF;
 
-     UPDATE order_ o SET o.cancel_time = CURRENT_TIMESTAMP, o.status = 'cancelled' WHERE o.id = order_id;
+     UPDATE order_  SET cancel_time = CURRENT_TIMESTAMP, status = 'cancelled' WHERE id = order_id;
 END;
 $BODY$
     LANGUAGE plpgsql;
@@ -54,7 +54,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument not found';
      END IF;
 
-     IF instrument.deleted_time THEN
+     IF instrument.delete_date THEN
         RAISE EXCEPTION 'Instrument is deleted';
      END IF;
 
@@ -90,12 +90,12 @@ BEGIN
         RAISE EXCEPTION 'Broker is deleted';
      END IF;
 
-     SELECT SUM(o.price * o.quantity + o.price * o.quantity * broker.comission) INTO cost_over_orders
+     SELECT SUM(o.price * o.quantity + o.price * o.quantity * broker.commission) INTO cost_over_orders
         FROM order_ o JOIN account a ON a.number = o.account WHERE a.number = account.number;
 
 
      IF account.type_account = 'debit' THEN
-        IF price * quantity  + price * quantity * broker.commission + cost_over_orders > current_funds THEN
+        IF price * quantity  + price * quantity * broker.commission + cost_over_orders > account.current_funds THEN
             RAISE EXCEPTION 'Account`s funds is exceeded';
         END IF;
      END IF;
@@ -112,13 +112,13 @@ BEGIN
         END IF;
      END IF;
 
-     SELECT * INTO instrument_template FROM instrument_template it WHERE it.insrument_code = instrument.instrument_template_code;
+     SELECT * INTO instrument_template FROM instrument_template it WHERE it.instrument_code = instrument.instrument_template_code;
 
      IF instrument_template IS NULL THEN
         RAISE EXCEPTION 'Instrument template not found';
      END IF;
 
-     IF instrument_template.deleted_time THEN
+     IF instrument_template.delete_date THEN
         RAISE EXCEPTION 'Instrument template is deleted';
      END IF;
 
@@ -143,12 +143,12 @@ BEGIN
     END IF;
 
     INSERT INTO order_ (place_time, price, quantity, leaves_qty, side, account, instrument_id)
-        VALUES(CURRENT_TIMESTAMP, price, quantity, quantity, side, account, instrument_id);
+        VALUES(CURRENT_TIMESTAMP, price, quantity, quantity, side, account.number, instrument_id);
 END;
 $BODY$
 LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION trade_order(order_id bigint, quantity int)
+CREATE OR REPLACE FUNCTION trade_order(order_id bigint, quantity_ int)
     RETURNS void AS
 $BODY$
 DECLARE
@@ -165,19 +165,19 @@ BEGIN
         RAISE EXCEPTION 'Order is cancelled';
      END IF;
 
-     IF order_.status != 'filled' THEN
+     IF order_.status = 'filled' THEN
         RAISE EXCEPTION 'Order is filled';
      END IF;
 
-     IF traded_qty + quantity = order_.quantity THEN
+     IF order_.traded_qty + quantity_ = order_.quantity THEN
         new_status = 'filled';
      ELSE
         new_status = 'partfilled';
      END IF;
 
      UPDATE order_ o
-        SET traded_qty = traded_qty + quantity,
-            leaves_qty = leaves_qty - quantity,
+        SET traded_qty = traded_qty + quantity_,
+            leaves_qty = leaves_qty - quantity_,
             status = new_status
         WHERE
             o.id = order_id;
