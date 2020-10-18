@@ -18,14 +18,12 @@ coupon_amount numeric(2), coupon_payment_frequency smallint, isin varchar(12), e
 currency_id smallint) RETURNS void AS
   $BODY$
 BEGIN
-  IF NOT EXISTS (SELECT 1 from currency where currency.id = currency_id) THEN
-    RAISE EXCEPTION 'Specified currency does not exists';
-  END IF;
+    PERFORM currency_exist(currency_id);
 
-  INSERT INTO instrument_template(instrument_code, short_name, long_name, coupon_rate, coupon_amount, coupon_payment_frequency, isin, emission_volume, nominal_price, 
-  instrument_type, currency, emission_date) 
-  VALUES(instrument_code, short_name, long_name, coupon_rate, coupon_amount, coupon_payment_frequency, isin, emission_volume, 
-  nominal_price, instrument_type, currency_id, CURRENT_TIMESTAMP);
+    INSERT INTO instrument_template(instrument_code, short_name, long_name, coupon_rate, coupon_amount, coupon_payment_frequency, isin, emission_volume, nominal_price,
+                    instrument_type, currency, emission_date)
+    VALUES(instrument_code, short_name, long_name, coupon_rate, coupon_amount, coupon_payment_frequency, isin, emission_volume,
+                    nominal_price, instrument_type, currency_id, CURRENT_TIMESTAMP);
 
 END;
 $BODY$
@@ -37,16 +35,15 @@ CREATE OR REPLACE FUNCTION remove_instrument_template(instrument_code varchar(6)
 DECLARE
     market RECORD;
     instrument_ RECORD;
+    instrument_template RECORD;
 BEGIN
-    IF NOT EXISTS(SELECT 1 from instrument_template where instrument_template.instrument_code = remove_instrument_template.instrument_code) THEN 
-        RAISE EXCEPTION 'Instrument does not exist';
-    END IF;
+    SELECT * INTO instrument_template FROM get_instrument_template(instrument_code);
 
     FOR market in
         SELECT * from market
     LOOP
-        IF(market.close_time > CURRENT_TIME) THEN
-            RAISE EXCEPTION 'At least market % is not closed', market.name;
+        IF(market.status = 'close') THEN
+            RAISE EXCEPTION 'Market % is not closed', market.name;
         END IF;
     END LOOP;
 

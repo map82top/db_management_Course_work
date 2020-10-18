@@ -3,35 +3,13 @@ CREATE OR REPLACE FUNCTION make_trader_movement_fund(amount money, direction dir
 $BODY$
 DECLARE
     account RECORD;
-    trader_ RECORD;
+    trader RECORD;
 BEGIN
+     SELECT * INTO account FROM get_account(account_number);
 
-    SELECT * INTO account FROM account a WHERE a.number = account_number;
+     SELECT * INTO trader FROM get_trader(account.trader_code);
 
-     IF account IS NULL THEN
-        RAISE EXCEPTION 'Account not found';
-     END IF;
-
-     IF account.deleted_time THEN
-        RAISE EXCEPTION 'Account is deleted';
-     END IF;
-
-     IF account.trader_code IS NULL THEN
-        RAISE EXCEPTION 'FOR trader movement fund trader account is required';
-     END IF;
-    
-
-    SELECT * INTO trader_ FROM trader t WHERE t.id = account.trader_code;
-    
-     IF trader_ IS NULL THEN
-        RAISE EXCEPTION 'Trader not found';
-     END IF;
-
-     IF trader_.deleted_time THEN
-        RAISE EXCEPTION 'Trader is deleted';
-     END IF;
-
-    PERFORM make_movement_fund(amount, direction, trader_.id, 'trader', account.number, description);
+     PERFORM make_movement_fund(amount, direction, trader.id, 'trader', account.number, description);
 END;
 $BODY$
     LANGUAGE plpgsql;
@@ -44,31 +22,15 @@ DECLARE
     account RECORD;
     broker RECORD;
 BEGIN
-    SELECT * INTO account FROM account a WHERE a.number = account_number;
+     SELECT * INTO account FROM get_account(account_number);
 
-     IF account IS NULL THEN
-        RAISE EXCEPTION 'Account not found';
+     IF account.trader_code IS NOT NULL THEN
+        RAISE EXCEPTION 'For broker movement fund broker account is required';
      END IF;
 
-     IF account.deleted_time THEN
-        RAISE EXCEPTION 'Account is deleted';
-     END IF;
+     SELECT * INTO broker FROM get_broker(account.broker_code);
 
-     IF account.broker_code IS NULL THEN
-        RAISE EXCEPTION 'FOR broker movement fund broker account is required';
-     END IF;
-
-     SELECT * INTO broker FROM broker b WHERE b.id = account.broker_code;
-
-     IF broker IS NULL THEN
-        RAISE EXCEPTION 'Broker not found';
-     END IF;
-
-     IF broker.deleted_time THEN
-        RAISE EXCEPTION 'Broker is deleted';
-     END IF;
-
-    PERFORM make_movement_fund(amount, direction, broker.id, 'broker', account.number, description);
+     PERFORM make_movement_fund(amount, direction, broker.id, 'broker', account.number, description);
 END;
 $BODY$
     LANGUAGE plpgsql;
@@ -89,15 +51,7 @@ BEGIN
         RAISE EXCEPTION 'Amount must be more then zero';
     END IF;
 
-    SELECT * INTO account FROM account a WHERE a.number = account_number;
-
-    IF account IS NULL THEN
-        RAISE EXCEPTION 'Account not found';
-    END IF;
-
-    IF account.deleted_time THEN
-       RAISE EXCEPTION 'Account is deleted';
-    END IF;
+    SELECT * INTO account FROM get_account(account_number);
 
     IF direction = 'output' THEN
          new_current_funds = account.current_funds - amount;
@@ -112,15 +66,7 @@ BEGIN
             RAISE EXCEPTION 'Initiator for broker movement fund can`t be NULL';
         END IF;
 
-        SELECT * INTO broker FROM broker b WHERE b.id = initiator_id;
-
-        IF broker IS NULL THEN
-            RAISE EXCEPTION 'Broker not found';
-        END IF;
-
-        IF broker.deleted_time THEN
-            RAISE EXCEPTION 'Broker is deleted';
-        END IF;
+        SELECT * INTO broker FROM get_broker(initiator_id);
 
         broker_initiator_id = initiator_id;
 
@@ -129,15 +75,7 @@ BEGIN
             RAISE EXCEPTION 'Initiator for trader movement fund can`t be NULL';
         END IF;
 
-        SELECT * INTO trader FROM trader t WHERE t.id = initiator_id;
-
-        IF trader IS NULL THEN
-            RAISE EXCEPTION 'Trader not found';
-        END IF;
-
-        IF trader.deleted_time THEN
-            RAISE EXCEPTION 'Trader is deleted';
-        END IF;
+        SELECT * INTO trader FROM get_trader(initiator_id);
 
         trader_initiator_id = initiator_id;
     ELSIF initiator_type = 'system' THEN

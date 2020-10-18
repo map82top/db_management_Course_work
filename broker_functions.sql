@@ -21,16 +21,11 @@ CREATE OR REPLACE FUNCTION create_broker(legal_entity_identifier varchar(20), ut
   RETURNS void AS
   $BODY$
 BEGIN
-  IF NOT EXISTS(SELECT id FROM time_zone where id = utc_time_zone_id) THEN
-    RAISE EXCEPTION 'Time zone not found';
-  END IF;
+    PERFORM time_zone_exist(utc_time_zone_id);
+    PERFORM country_exist(country_id);
 
-  IF NOT EXISTS(SELECT * FROM country where id = country_id) THEN
-    RAISE EXCEPTION 'Country not found';
-  END IF;
-
-  INSERT INTO broker(legal_entity_identifier, timezone, country, commission, actual_address, legal_address, name)
-  VALUES(legal_entity_identifier, utc_time_zone_id, country_id, commission, actual_address, legal_address, broker_name);
+    INSERT INTO broker(legal_entity_identifier, timezone, country, commission, actual_address, legal_address, name)
+        VALUES(legal_entity_identifier, utc_time_zone_id, country_id, commission, actual_address, legal_address, broker_name);
 END;
 $BODY$
   LANGUAGE plpgsql;
@@ -67,34 +62,13 @@ CREATE OR REPLACE FUNCTION add_broker_to_market(broker_id int, market_id int, cu
 DECLARE
   broker_ RECORD;
   market_ RECORD;
-  currency_ RECORD;
   account_id int;
 BEGIN
-  SELECT * into broker_ from broker where broker_id = broker.id;
+    SELECT * INTO broker_ FROM get_broker(broker_id);
 
-  IF broker_ is null THEN
-    RAISE EXCEPTION 'Broker not found';
-  END IF;
+    SELECT * INTO market_ FROM get_market(market_id);
 
-  IF broker_.deleted_time is not null THEN
-    RAISE EXCEPTION 'Broker is deleted';
-  END IF;
-
-  SELECT * into market_ from market where market_id = market.id;
-
-  IF market_ is null THEN
-    RAISE EXCEPTION 'Market not found';
-  END IF;
-
-  IF market_.deleted_time is not null THEN
-    RAISE EXCEPTION 'Market is deleted';
-  END IF;
-
-  SELECT * into currency_ from currency where currency.id = currency_id;
-
-  IF currency_ is null THEN
-    RAISE EXCEPTION 'Currency not found';
-  END IF;  
+    PERFORM currency_exist(currency_id);
 
   select create_account(NULL, broker_id, 'debit', currency_id) into account_id;
 
@@ -110,56 +84,39 @@ $BODY$
 
 
 CREATE OR REPLACE FUNCTION delete_broker_from_market_human(broker_name varchar(100), market_name varchar(60))
-  RETURNS void AS
-  $BODY$
+    RETURNS void AS
+    $BODY$
 DECLARE
-  broker_id int;
-  market_id int;
+    broker_id int;
+    market_id int;
 BEGIN
-  SELECT id into broker_id from broker where broker_name = broker.name;
-  SELECT id into market_id from market where market_name = market.name;
+    SELECT id into broker_id from broker where broker_name = broker.name;
+    SELECT id into market_id from market where market_name = market.name;
 
-  PERFORM delete_broker_from_market(broker_id, market_id);
+    PERFORM delete_broker_from_market(broker_id, market_id);
 END;
 $BODY$
   LANGUAGE plpgsql;
 
 
 CREATE OR REPLACE FUNCTION delete_broker_from_market(broker_id int, market_id int)
-  RETURNS void AS
-  $BODY$
+     RETURNS void AS
+     $BODY$
 DECLARE
-  currency_id smallint;
-  market_ RECORD;
-  broker_ RECORD;
-  account RECORD;
+    market_ RECORD;
+    broker_ RECORD;
+    account RECORD;
 BEGIN
-  SELECT * into broker_ from broker where broker_id = broker.id;
+    SELECT * INTO broker_ FROM get_broker(broker_id);
 
-  IF broker_ is null THEN
-    RAISE EXCEPTION 'Broker not found';
-  END IF;
+    SELECT * INTO market_ FROM get_market(market_id);
 
-  IF broker_.deleted_time is not null THEN
-    RAISE EXCEPTION 'Broker is deleted';
-  END IF;
-
-  SELECT * into market_ from market where market_id = market.id;
-
-  IF market_ is null THEN
-    RAISE EXCEPTION 'Market not found';
-  END IF;
-
-  IF market_.deleted_time is not null THEN
-    RAISE EXCEPTION 'Market is deleted';
-  END IF;
-
-  FOR account IN
-    Select account_id from market_broker where market_broker.market_id = market_.id and broker_.id = market_broker.broker_id
-  LOOP
-    PERFORM delete_account(account.account_id);
-  END LOOP;
-  DELETE from market_broker mb where mb.market_id = market_.id and broker_.id = mb.broker_id;
+    FOR account IN
+        Select account_id from market_broker where market_broker.market_id = market_.id and broker_.id = market_broker.broker_id
+    LOOP
+        PERFORM delete_account(account.account_id);
+    END LOOP;
+    DELETE from market_broker mb where mb.market_id = market_.id and broker_.id = mb.broker_id;
 END;
 $BODY$
   LANGUAGE plpgsql;
@@ -168,10 +125,10 @@ $BODY$
 CREATE OR REPLACE FUNCTION delete_broker_human(broker_name varchar(100)) RETURNS void AS
   $BODY$
 DECLARE
-  broker_id int;
+    broker_id int;
 BEGIN
-  select id into broker_id from broker where broker.name = broker_name;
-  PERFORM delete_broker(broker_id);
+    select id into broker_id from broker where broker.name = broker_name;
+    PERFORM delete_broker(broker_id);
 END;
 $BODY$
   LANGUAGE plpgsql;
@@ -180,26 +137,18 @@ $BODY$
 CREATE OR REPLACE FUNCTION delete_broker(brokerid int) RETURNS void AS
   $BODY$
 DECLARE
-  broker_ RECORD;
-  market RECORD;
+     broker_ RECORD;
+     market RECORD;
 BEGIN
-  select * into broker_ from broker where broker.id = brokerid;
+     SELECT * INTO broker_ FROM get_broker(brokerid);
 
-  if broker_ is null THEN 
-    RAISE EXCEPTION 'Broker not found';
-  END IF;
+     FOR market IN
+        SELECT market_id from market_broker where market_broker.broker_id = brokerid
+     LOOP
+        PERFORM delete_broker_from_market(brokerid, market.market_id);
+     END LOOP;
 
-  if broker_.deleted_time is not null THEN 
-    RAISE EXCEPTION 'Broker already deleted';
-  END IF;
-
-  FOR market IN
-    SELECT market_id from market_broker where market_broker.broker_id = brokerid
-  LOOP
-    PERFORM delete_broker_from_market(brokerid, market.market_id);
-  END LOOP;
-  
-  UPDATE broker SET deleted_time = now() where broker.id = brokerid;
+     UPDATE broker SET deleted_time = now() where broker.id = brokerid;
 END;
 $BODY$
   LANGUAGE plpgsql;

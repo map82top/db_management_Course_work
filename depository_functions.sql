@@ -37,23 +37,16 @@ $BODY$
 
 
 
-CREATE OR REPLACE FUNCTION initial_placement(instument_id int, price money, quantity int, account_number int)
+CREATE OR REPLACE FUNCTION initial_placement(instrument_id int, price money, quantity int, account_number int)
     RETURNS void AS
 $BODY$
 DECLARE
     account RECORD;
-    instrument_ RECORD;
-    instrument_template_ RECORD;
+    instrument RECORD;
+    instrument_template RECORD;
+    instruments_in_system bigint;
 BEGIN
-    SELECT * INTO account FROM account a WHERE a.number = account_number;
-
-     IF account IS NULL THEN
-        RAISE EXCEPTION 'Account not found';
-     END IF;
-
-     IF account.deleted_time THEN
-        RAISE EXCEPTION 'Account is deleted';
-     END IF;
+     SELECT * INTO account FROM get_account(account_number);
 
      IF account.trader_code IS NOT NULL THEN
         RAISE EXCEPTION 'Owner of account must be a broker';
@@ -63,30 +56,18 @@ BEGIN
         RAISE EXCEPTION 'Insufficient funds on the account';
      END IF;
 
-     SELECT * INTO instrument_ FROM instrument inst WHERE inst.id = instument_id;
+     SELECT * INTO instrument FROM get_instrument(instrument_id);
+     SELECT * INTO instrument_template FROM get_instrument_template(instrument.instrument_template_code);
 
-     IF instrument_ IS NULL THEN
-        RAISE EXCEPTION 'Instrument not found';
-     END IF;
+     SELECT SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -(d.quantity) END) INTO instruments_in_system FROM depository d WHERE d.instrument_id = initial_placement.instrument_id;
 
-     IF instrument_.delete_date THEN
-        RAISE EXCEPTION 'Instrument is deleted';
-     END IF;
-
-
-     SELECT * INTO instrument_template_ FROM instrument_template WHERE instrument_code = instrument_.instrument_template_code;
-
-     IF instrument_template_ IS NULL THEN
-        RAISE EXCEPTION 'Instrument template not found';
-     END IF;
-
-     IF instrument_template_.delete_date THEN
-        RAISE EXCEPTION 'Instrument template is deleted';
+     IF instruments_in_system + quantity > instrument_template.emission_volume THEN
+        RAISE EXCEPTION 'Instruments in system can`t be more then emission volume';
      END IF;
 
      PERFORM make_broker_movement_fund (price * quantity, 'output', account_number, 'Initial placement');
 
-     INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(price, quantity, 'input', instument_id, account_number);
+     INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(price, quantity, 'input', instrument_id, account_number);
 
 END;
 $BODY$
@@ -99,27 +80,11 @@ DECLARE
     account RECORD;
     instrument RECORD;
 BEGIN
-    SELECT * INTO account FROM account a WHERE a.number = account_number;
+     SELECT * INTO account FROM get_account(account_number);
 
-     IF account IS NULL THEN
-        RAISE EXCEPTION 'Account not found';
-     END IF;
+     SELECT * INTO instrument FROM get_instrument(instrument_id);
 
-     IF account.deleted_time THEN
-        RAISE EXCEPTION 'Account is deleted';
-     END IF;
-
-    SELECT * INTO instrument FROM instrument inst WHERE inst.id = instument_id;
-
-     IF instrument IS NULL THEN
-        RAISE EXCEPTION 'Instrument not found';
-     END IF;
-
-     IF instrument.deleted_time THEN
-        RAISE EXCEPTION 'Instrument is deleted';
-     END IF;
-
-     RETURN (SELECT SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -d.quanity END) FROM depository d
+     RETURN (SELECT COALESCE(SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -d.quantity END), 0) FROM depository d
      WHERE d.instrument_id = count_instrument_on_account.instrument_id
         AND d.account_number = count_instrument_on_account.account_number);
 END;

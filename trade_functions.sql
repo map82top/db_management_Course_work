@@ -23,33 +23,8 @@ DECLARE
     market RECORD;
 
 BEGIN
-    SELECT * INTO bid_order FROM order_ o WHERE o.id = bid_order_id;
-
-     IF bid_order IS NULL THEN
-        RAISE EXCEPTION 'Order not found';
-     END IF;
-
-     IF bid_order.cancel_time IS NOT NULL OR bid_order.status = 'cancelled' THEN
-        RAISE EXCEPTION 'Order is cancelled';
-     END IF;
-
-     IF bid_order.status = 'filled' THEN
-        RAISE EXCEPTION 'Order is filled';
-     END IF;
-
-     SELECT * INTO offer_order FROM order_ o WHERE o.id = offer_order_id;
-
-     IF offer_order IS NULL THEN
-        RAISE EXCEPTION 'Order not found';
-     END IF;
-
-     IF offer_order.cancel_time IS NOT NULL OR offer_order.status = 'cancelled' THEN
-        RAISE EXCEPTION 'Order is cancelled';
-     END IF;
-
-     IF offer_order.status = 'filled' THEN
-        RAISE EXCEPTION 'Order is filled';
-     END IF;
+    SELECT * INTO bid_order FROM get_order(bid_order_id);
+    SELECT * INTO offer_order FROM get_order(offer_order_id);
 
      IF offer_order.side = 'bid' AND bid_order.side = 'bid' OR offer_order.side = 'offer' AND bid_order.side = 'offer' THEN
         RAISE EXCEPTION 'Both orders is on same side';
@@ -75,49 +50,16 @@ BEGIN
         RAISE EXCEPTION 'Available quantity on bid order is less then trade quantity';
      END IF;
 
-     SELECT * INTO bid_account FROM account ac WHERE ac.number = bid_order.account;
+     SELECT * INTO bid_account FROM get_account(bid_order.account);
+     SELECT * INTO offer_account FROM get_account(offer_order.account);
 
-     IF bid_account IS NULL THEN
-        RAISE EXCEPTION 'Bid account not found';
-     END IF;
-
-     IF bid_account.deleted_time THEN
-        RAISE EXCEPTION 'Bid account is deleted';
-     END IF;
-
-     SELECT * INTO offer_account FROM account ac WHERE ac.number = offer_order.account;
-
-     IF offer_account IS NULL THEN
-        RAISE EXCEPTION 'Bid account not found';
-     END IF;
-
-     IF offer_account.deleted_time THEN
-        RAISE EXCEPTION 'Bid account is deleted';
-     END IF;
-
-     SELECT * INTO instrument FROM instrument inst WHERE inst.id = offer_order.instrument_id;
-
-     IF instrument IS NULL THEN
-        RAISE EXCEPTION 'Instrument not found';
-     END IF;
-
-     IF instrument.delete_date THEN
-        RAISE EXCEPTION 'Instrument is deleted';
-     END IF;
+     SELECT * INTO instrument FROM get_instrument(offer_order.instrument_id);
 
      IF quantity % instrument.lot_size != 0 THEN
         RAISE EXCEPTION 'Traded quantity not multiple to lot size instrument';
      END IF;
 
-     SELECT * INTO market FROM market m WHERE m.id = instrument.market_id;
-
-     IF market IS NULL THEN
-        RAISE EXCEPTION 'Market not found';
-     END IF;
-
-     IF market.deleted_time THEN
-        RAISE EXCEPTION 'Market is deleted';
-     END IF;
+     SELECT * INTO market FROM get_market(instrument.market_id);
 
      IF market.status = 'close' THEN
         RAISE EXCEPTION 'Market is closed';
@@ -131,85 +73,27 @@ BEGIN
         RAISE EXCEPTION 'Currency market not equal currency bid account';
      END IF;
 
-    SELECT * INTO instrument_template FROM instrument_template it WHERE it.instrument_code = instrument.instrument_template_code;
-
-     IF instrument_template IS NULL THEN
-        RAISE EXCEPTION 'Instrument template not found';
-     END IF;
-
-     IF instrument_template.delete_date THEN
-        RAISE EXCEPTION 'Instrument template is deleted';
-     END IF;
+     SELECT * INTO instrument_template FROM get_instrument_template(instrument.instrument_template_code);
 
      IF instrument_template.emission_volume < quantity THEN
         RAISE EXCEPTION 'Order`s quantity can`t be more when an emission volume of instrument';
      END IF;
 
-     SELECT * INTO bid_broker FROM broker b WHERE b.id = bid_account.broker_code;
+     SELECT * INTO bid_broker FROM get_broker(bid_account.broker_code);
+     SELECT * INTO offer_broker FROM  get_broker(offer_account.broker_code);
 
-     IF bid_broker IS NULL THEN
-        RAISE EXCEPTION 'Bid broker not found';
-     END IF;
+     SELECT * INTO bid_market_broker FROM get_market_broker(market.id, bid_broker.id);
+     SELECT * INTO bid_broker_account FROM get_account(bid_market_broker.account_id);
 
-     IF bid_account.deleted_time THEN
-        RAISE EXCEPTION 'Bid broker is deleted';
-     END IF;
-
-     SELECT * INTO offer_broker FROM broker b WHERE b.id = offer_account.broker_code;
-
-     IF bid_broker IS NULL THEN
-        RAISE EXCEPTION 'Offer broker not found';
-     END IF;
-
-     IF bid_account.deleted_time THEN
-        RAISE EXCEPTION 'Offer broker is deleted';
-     END IF;
-
-    SELECT * INTO bid_market_broker FROM market_broker mb WHERE mb.broker_id = bid_broker.id AND market.id = mb.market_id;
-
-     IF bid_market_broker IS NULL THEN
-        RAISE EXCEPTION 'Bid broker not assign to order`s market';
-     END IF;
-
-    SELECT * INTO offer_market_broker FROM market_broker mb WHERE mb.broker_id = offer_broker.id AND market.id = mb.market_id;
-
-     IF offer_market_broker IS NULL THEN
-        RAISE EXCEPTION 'Offer broker not assign to order`s market';
-     END IF;
-
-     SELECT * INTO bid_broker_account FROM account ac WHERE ac.number = bid_market_broker.account_id;
-
-     IF bid_broker_account IS NULL THEN
-        RAISE EXCEPTION 'Bid broker account not found';
-     END IF;
-
-     IF bid_broker_account.deleted_time THEN
-        RAISE EXCEPTION 'Bid broker account is deleted';
-     END IF;
-
-     SELECT * INTO offer_broker_account FROM account ac WHERE ac.number = offer_market_broker.account_id;
-
-     IF offer_broker_account IS NULL THEN
-        RAISE EXCEPTION 'Offer broker account not found';
-     END IF;
-
-     IF offer_broker_account.deleted_time THEN
-        RAISE EXCEPTION 'Offer broker account is deleted';
-     END IF;
+     SELECT * INTO offer_market_broker FROM get_market_broker(market.id, offer_broker.id);
+     SELECT * INTO offer_broker_account FROM get_account(offer_market_broker.account_id);
 
      PERFORM trade_order(bid_order.id, quantity);
      PERFORM trade_order(offer_order.id, quantity);
 
     IF bid_account.trader_code IS NOT NULL THEN
-     SELECT * INTO bid_trader FROM trader t WHERE t.id = bid_account.trader_code;
-        IF bid_trader IS NULL THEN
-            RAISE EXCEPTION 'Bid trader not found';
-        END IF;
+     SELECT * INTO bid_trader FROM get_trader(bid_account.trader_code);
 
-        IF bid_trader.deleted_time THEN
-           RAISE EXCEPTION 'Bid trader is deleted';
-        END IF;
-      raise notice 'Values % - % - %', bid_order.price, quantity, bid_broker.commission;
      PERFORM make_movement_fund(bid_order.price * quantity, 'output', NULL, 'system', bid_account.number, 'buying ' || instrument_template.short_name);
      PERFORM make_movement_fund(bid_order.price * quantity * bid_broker.commission, 'output', NULL, 'system', bid_account.number, 'broker commission per buying ' || instrument_template.short_name);
      PERFORM make_movement_fund(bid_order.price * quantity * bid_broker.commission, 'input', NULL, 'system', bid_broker_account.number,
@@ -219,14 +103,7 @@ BEGIN
     END IF;
 
     IF offer_account.trader_code IS NOT NULL THEN
-     SELECT * INTO offer_trader FROM trader t WHERE t.id = offer_account.trader_code;
-        IF offer_trader IS NULL THEN
-           RAISE EXCEPTION 'Offer trader not found';
-        END IF;
-
-        IF offer_trader.deleted_time THEN
-            RAISE EXCEPTION 'Offer trader is deleted';
-        END IF;
+     SELECT * INTO offer_trader FROM get_trader(offer_account.trader_code);
 
      PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_account.number, 'selling ' || instrument_template.short_name);
      PERFORM make_movement_fund(offer_order.price * quantity * offer_broker.commission, 'output', NULL, 'system', offer_account.number, 'broker commission per selling ' || instrument_template.short_name);
@@ -235,7 +112,6 @@ BEGIN
     ELSE
      PERFORM make_movement_fund(offer_order.price * quantity, 'input', NULL, 'system', offer_broker_account.number, 'selling ' || instrument_template.short_name);
     END IF;
-
 
      INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(bid_order.price, quantity, 'input', bid_order.instrument_id, bid_account.number);
      INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(offer_order.price, quantity, 'output', offer_order.instrument_id, offer_account.number);

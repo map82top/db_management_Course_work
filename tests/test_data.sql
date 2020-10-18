@@ -57,78 +57,74 @@ select initial_placement_human(10.0::money,10000,'Betta','MSE','06806');
 select open_market_human('MSE');
 select open_market_human('SPSE');
 
-select create_order(1,1,10::money,20,'bid');
-select create_order(4,1,10::money,30,'bid');
-select create_order(1,1,10::money,20,'offer');
-select create_order(4,1,10::money,10,'offer');
-select create_order(4,1,10::money,20,'offer');
 
-select create_order(2,2,10::money,20,'bid');
-select create_order(5,2,10::money,30,'bid');
-select create_order(2,2,10::money,20,'offer');
-select create_order(5,2,10::money,10,'offer');
-select create_order(5,2,10::money,20,'offer');
+select create_order(1,1,10::money,40, 'bid');
+select create_order(7,1,10::money,40, 'offer');
+select create_trade(1,2,40);
+select create_order(1,1,11::money, 40, 'offer');
+select create_order(4,1,11::money, 20, 'bid');
+select create_order(4,1,11::money, 20, 'bid');
+select create_trade(4,3,20);
+select create_trade(5,3,10);
+select create_trade(5,3,10);
 
-select create_order(3,3,10::money,20,'bid');
-select create_order(6,3,10::money,30,'bid');
-select create_order(3,3,10::money,20,'offer');
-select create_order(6,3,10::money,10,'offer');
-select create_order(6,3,10::money,20,'offer');
+select create_order(2,2,10::money,40, 'bid');
+select create_order(8,2,10::money,40, 'offer');
+select create_trade(6,7,40);
+select create_order(2,2,11::money, 40, 'offer');
+select create_order(5,2,11::money, 20, 'bid');
+select create_order(5,2,11::money, 20, 'bid');
+select create_trade(9,8,20);
+select create_trade(10,8,10);
+select create_trade(10,8,10);
 
-select create_order(1,4,10::money,20,'bid');
-select create_order(4,4,10::money,30,'bid');
-select create_order(1,4,10::money,20,'offer');
-select create_order(4,4,10::money,10,'offer');
-select create_order(4,4,10::money,20,'offer');
+select create_order(3,3,10::money,40, 'bid');
+select create_order(9,3,10::money,40, 'offer');
+select create_trade(11,12,40);
+select create_order(3,3,11::money, 40, 'offer');
+select create_order(6,3,11::money, 20, 'bid');
+select create_order(6,3,11::money, 20, 'bid');
+select create_trade(14,13,20);
+select create_trade(15,13,10);
+select create_trade(15,13,10);
 
-select create_order(2,5,10::money,20,'bid');
-select create_order(5,5,10::money,30,'bid');
-select create_order(2,5,10::money,20,'offer');
-select create_order(5,5,10::money,10,'offer');
-select create_order(5,5,10::money,20,'offer');
+select create_order(1,4,10::money,40, 'bid');
+select create_order(10,4,10::money,40, 'offer');
+select create_trade(16,17,40);
+select create_order(1,4,11::money, 40, 'offer');
+select create_order(4,4,11::money, 20, 'bid');
+select create_order(4,4,11::money, 20, 'bid');
+select create_trade(19,18,20);
+select create_trade(20,18,10);
+select create_trade(20,18,10);
 
-select create_order(3,6,10::money,20,'bid');
-select create_order(6,6,10::money,30,'bid');
-select create_order(3,6,10::money,20,'offer');
-select create_order(6,6,10::money,10,'offer');
-select create_order(6,6,10::money,20,'offer');
+select create_order(2,5,10::money,40, 'bid');
+select create_order(11,5,10::money,40, 'offer');
+select create_trade(21,22,40);
+select create_order(2,5,11::money, 40, 'offer');
+select create_order(5,5,11::money, 20, 'bid');
+select create_order(5,5,11::money, 20, 'bid');
+select create_trade(24,23,20);
+select create_trade(25,23,10);
+select create_trade(25,23,10);
 
-select create_trade(1, 4, 10);
-select create_trade(1, 5, 10);
-select create_trade(2, 3, 10);
-select create_trade(2, 3, 10);
+select create_order(3,6,10::money,40, 'bid');
+select create_order(12,6,10::money,40, 'offer');
+select create_trade(26,27,40);
+select create_order(3,6,11::money, 40, 'offer');
+select create_order(6,6,11::money, 20, 'bid');
+select create_order(6,6,11::money, 20, 'bid');
+select create_trade(29,28,20);
+select create_trade(30,28,10);
+select create_trade(30,28,10);
 
-select create_trade(6, 9, 10);
-select create_trade(6, 10, 10);
-select create_trade(7, 8, 10);
-select create_trade(7, 8, 10);
-
-select create_trade(11, 14, 10);
-select create_trade(11, 15, 10);
-select create_trade(12, 13, 10);
-select create_trade(12, 13, 10);
-
-select create_trade(16, 19, 10);
-select create_trade(16, 20, 10);
-select create_trade(17, 18, 10);
-select create_trade(17, 18, 10);
-
-select create_trade(21, 24, 10);
-select create_trade(21, 25, 10);
-select create_trade(22, 23, 10);
-select create_trade(22, 23, 10);
-
-select create_trade(26, 29, 10);
-select create_trade(26, 30, 10);
-select create_trade(27, 28, 10);
-select create_trade(27, 28, 10);
 
 select close_market_human('MSE');
 select close_market_human('SPSE');
 
-select make_broker_movement_fund(1::money,'output',7,'output test');
-select make_broker_movement_fund(1::money,'output',8,'output test');
-select make_broker_movement_fund(1::money,'output',9,'output test');
-select make_broker_movement_fund(1::money,'output',10,'output test');
-select make_broker_movement_fund(1::money,'output',11,'output test');
-select make_broker_movement_fund(1::money,'output',12,'output test');
+select make_broker_movement_fund(100::money,'output',7,'output test');
+select make_broker_movement_fund(100::money,'output',8,'output test');
+select make_broker_movement_fund(100::money,'output',9,'output test');
+select make_broker_movement_fund(100::money,'output',10,'output test');
+select make_broker_movement_fund(100::money,'output',11,'output test');
+select make_broker_movement_fund(100::money,'output',12,'output test');

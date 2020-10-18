@@ -18,11 +18,7 @@ $BODY$
 DECLARE
     currency RECORD;
 BEGIN
-    SELECT * INTO currency FROM currency cur WHERE cur.id = create_market.currency_id;
-
-    IF currency IS NULL THEN
-        RAISE EXCEPTION 'Currency not found';
-    END IF;
+    PERFORM currency_exist(create_market.currency_id);
 
     INSERT INTO market (name, open_time, close_time, currency, status) VALUES(market_name, open_time, clost_time, currency_id, DEFAULT);
 END;
@@ -51,15 +47,7 @@ DECLARE
     instrument RECORD;
     market_broker RECORD;
 BEGIN
-    SELECT * INTO market FROM market m WHERE m.id = delete_market.market_id;
-
-     IF market IS NULL THEN
-        RAISE EXCEPTION 'Market not found';
-     END IF;
-
-     IF market.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Market is deleted';
-     END IF;
+     SELECT * INTO market FROM get_market(market_id);
 
      IF market.status != 'close' THEN
         RAISE EXCEPTION 'Market not closed';
@@ -103,15 +91,7 @@ $BODY$
 DECLARE
      market RECORD;
 BEGIN
-     SELECT * INTO market FROM market m WHERE m.id = open_market.market_id;
-
-     IF market IS NULL THEN
-        RAISE EXCEPTION 'Market not found';
-     END IF;
-
-     IF market.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Market is deleted';
-     END IF;
+     SELECT * INTO market FROM get_market(market_id);
 
      IF market.status != 'close' THEN
         RAISE EXCEPTION 'Market not closed';
@@ -144,15 +124,7 @@ DECLARE
      market RECORD;
      order_id bigint;
 BEGIN
-     SELECT * INTO market FROM market m WHERE m.id = close_market.market_id;
-
-     IF market IS NULL THEN
-        RAISE EXCEPTION 'Market not found';
-     END IF;
-
-     IF market.deleted_time IS NOT NULL THEN
-        RAISE EXCEPTION 'Market is deleted';
-     END IF;
+     SELECT * INTO market FROM get_market(market_id);
 
      IF market.status = 'close' THEN
         RAISE EXCEPTION 'Market is closed';
