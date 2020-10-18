@@ -21,13 +21,13 @@ docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_d
 echo Performed instrument_template_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../instrument_functions.sql
 echo Performed instrument_functions
+docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../depository_functions.sql
+echo Performed depository_functions;
+docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../movement_fund_functions.sql
+echo Performed movement_fund_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../order_functions.sql
 echo Performed order_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../market_functions.sql
 echo Performed market_functions
-docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../movement_fund_functions.sql
-echo Performed movement_fund_functions
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../trade_functions.sql
 echo Performed trade_function
-docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../depository_functions.sql
-echo Performed depository_functions;

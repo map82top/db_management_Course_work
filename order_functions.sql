@@ -37,6 +37,7 @@ DECLARE
     market_broker RECORD;
     cost_over_orders money;
     broker_market_account RECORD;
+    all_offer_quantity bigint;
 BEGIN
     SELECT * INTO account FROM account ac WHERE ac.number = account_id;
 
@@ -90,9 +91,16 @@ BEGIN
         RAISE EXCEPTION 'Broker is deleted';
      END IF;
 
-     SELECT SUM(o.price * o.quantity + o.price * o.quantity * broker.comission) INTO cost_over_orders
+     IF EXISTS(SELECT * FROM order_ o JOIN account a ON a.number = o.account WHERE a.number = account.number AND o.side != side) THEN
+        RAISE EXCEPTION 'Not available active bid and offer orders from one account in the same time';
+     END IF;
+
+     SELECT SUM(o.price * o.quantity + o.price * o.quantity * broker.comission), SUM(o.quantity) INTO cost_over_orders, all_offer_quantity
         FROM order_ o JOIN account a ON a.number = o.account WHERE a.number = account.number;
 
+     IF all_offer_quantity + quanity > (SELECT count_instrument_on_account(instrument.id, account.number)) THEN
+           RAISE EXCEPTION 'Not available selling more orders then has in account depositary';
+     END IF;
 
      IF account.type_account = 'debit' THEN
         IF price * quantity  + price * quantity * broker.commission + cost_over_orders > current_funds THEN

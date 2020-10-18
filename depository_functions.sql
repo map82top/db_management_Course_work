@@ -5,6 +5,7 @@ DECLARE
     account RECORD;
     instrument RECORD;
     instrument_template RECORD;
+    instruments_in_system bigint;
 BEGIN
     SELECT * INTO account FROM account a WHERE a.number = account_number;
 
@@ -44,6 +45,12 @@ BEGIN
         RAISE EXCEPTION 'Instrument template is deleted';
      END IF;
 
+     SELECT SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -d.quanity END) INTO instruments_in_system FROM depository d WHERE d.instrument_id = instument_id;
+
+     IF instruments_in_system + quantity > instrument_template.emission_volume THEN
+        RAISE EXCEPTION 'Instruments in system can`t be more then emission volume';
+     END IF;
+
      PERFORM make_broker_movement_fund (price * quantity, 'output', account_number, 'Initial placement');
 
      INSERT INTO depository (price, quantity, direction, instrument_id, account_number) VALUES(price, quantity, 'input', instument_id, account_number);
@@ -79,7 +86,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument is deleted';
      END IF;
 
-     RETURN (SELECT SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -d.quanity END) FROM depository d
+     RETURN (SELECT COALESCE(SUM(CASE WHEN d.direction = 'input' THEN d.quantity ELSE -d.quanity END), 0) FROM depository d
      WHERE d.instrument_id = count_instrument_on_account.instrument_id
         AND d.account_number = count_instrument_on_account.account_number);
 END;
