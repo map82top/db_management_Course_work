@@ -203,3 +203,81 @@ BEGIN
 END;
 $BODY$ 
 LANGUAGE plpgsql;  
+
+
+CREATE OR REPLACE FUNCTION get_order_statuses_by_trader_id(trader_id int) 
+RETURNS TABLE
+(
+    trader varchar(100),
+    status order_status,
+    traded_qty int,
+    leaves_qty int,
+    instrument varchar(20)
+)
+AS $BODY$ 
+DECLARE
+    trader_ RECORD; 
+BEGIN
+    SELECT * into trader_ from get_trader(trader_id);
+
+    RETURN QUERY (Select trader_.first_name, order_.status, order_.traded_qty, order_.leaves_qty, instrument_template.short_name
+                    from order_ join account on account.number = order_.account
+                    join instrument on instrument.id = order_.instrument_id
+                    join instrument_template on instrument_template.instrument_code = instrument.instrument_template_code
+                    where account.trader_code = trader_.id  
+    );
+END;
+$BODY$ 
+LANGUAGE plpgsql;  
+
+
+CREATE OR REPLACE FUNCTION total_trading_volume_by_instrument_id(instrument_id int) 
+RETURNS TABLE
+(
+    instrument varchar(20),
+    total_lot_movement bigint
+)
+AS $BODY$ 
+DECLARE
+    instrument_ RECORD; 
+BEGIN
+    SELECT * into instrument_ from get_instrument(instrument_id);
+
+    RETURN QUERY (SELECT instrument_template.short_name, SUM(trade.quantity/instrument.lot_size) 
+                    from instrument join instrument_template on instrument_template.instrument_code = instrument.instrument_template_code
+                                    join order_ on instrument.id = order_.instrument_id
+                                    join trade on order_.id = trade.bid_order_id
+                                    where instrument.id = instrument_.id
+                                    GROUP BY instrument_template.short_name
+    );
+END;
+$BODY$ 
+LANGUAGE plpgsql;  
+
+
+CREATE OR REPLACE FUNCTION total_trading_volume_by_broker_id(broker_id int, start_date timestamptz, end_date timestamptz)
+RETURNS TABLE
+(
+    trader varchar(100),
+    instrument varchar(20),
+    total_lot_movement bigint
+)
+AS $BODY$ 
+DECLARE
+    broker_ RECORD; 
+BEGIN
+    SELECT * into broker_ from get_broker(broker_id);
+
+    RETURN QUERY (
+        SELECT trader.first_name, instrument_template.short_name, SUM(trade.quantity/instrument.lot_size)
+        from instrument join instrument_template on instrument_template.instrument_code = instrument.instrument_template_code
+                                    join order_ on instrument.id = order_.instrument_id
+                                    join trade on order_.id = trade.bid_order_id
+                                    join account on order_.account = account.number
+                                    join trader on account.trader_code = trader.id
+                                    where account.broker_code = broker_.id and trade.trade_date >= start_date and trade.trade_date <= end_date
+                                    group by trader.first_name, instrument_template.short_name, instrument.lot_size
+    );
+END;
+$BODY$ 
+LANGUAGE plpgsql; 

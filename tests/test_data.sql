@@ -126,6 +126,7 @@ select create_order(8,2,10::money,40, 'offer');
 select create_trade(33, 34, 40);
 
 select * from all_active_orders_on_market(6);
+select * from get_order_statuses_by_trader_id(2);
 
 select close_market_human('MSE');
 select close_market_human('SPSE');
@@ -143,3 +144,6 @@ select * from movement_fund_hisory_by_acount_number(1);
 select * from trade_history_by_date_interval(CURRENT_TIMESTAMP - interval '1 day', CURRENT_TIMESTAMP, 1);
 select * from trade_history_by_account_number(2);
 select * from commision_income_by_broker_id(1);
+
+select * from total_trading_volume_by_instrument_id(1);
+select * from total_trading_volume_by_broker_id(1, CURRENT_TIMESTAMP - interval '1 day', CURRENT_TIMESTAMP);
