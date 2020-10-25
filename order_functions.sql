@@ -6,7 +6,7 @@ DECLARE
 BEGIN
     SELECT * INTO order_ FROM get_order(order_id);
 
-    UPDATE order_ o SET o.cancel_time = CURRENT_TIMESTAMP, o.status = 'cancelled' WHERE o.id = order_id;
+    UPDATE order_ o SET cancel_time = CURRENT_TIMESTAMP, status = 'cancelled' WHERE o.id = order_id;
 END;
 $BODY$
     LANGUAGE plpgsql;

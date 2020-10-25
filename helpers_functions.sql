@@ -206,3 +206,8 @@ BEGIN
 END;
 $BODY$
 LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION iif_sql(boolean, anyelement, anyelement) returns anyelement as
+$body$ select case $1 when true then $2 else $3 end $body$
+LANGUAGE sql IMMUTABLE;

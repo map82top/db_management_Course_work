@@ -13,4 +13,5 @@ psql -U postgres -h localhost -d exchange_db -f ../order_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../movement_fund_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../trade_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../depository_functions.sql
+psql -U postgres -h localhost -d exchange_db -f ../statistic_functions.sql
 psql -U postgres -h localhost -d exchange_db -f ../tests/test_data.sql

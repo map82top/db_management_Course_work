@@ -108,16 +108,24 @@ select create_trade(24,23,20);
 select create_trade(25,23,10);
 select create_trade(25,23,10);
 
-select create_order(3,6,10::money,40, 'bid');
-select create_order(12,6,10::money,40, 'offer');
-select create_trade(26,27,40);
+select create_order(3,6,10::money,50, 'bid');
+select create_order(12,6,10::money,50, 'offer');
+select create_trade(26,27,50);
 select create_order(3,6,11::money, 40, 'offer');
 select create_order(6,6,11::money, 20, 'bid');
 select create_order(6,6,11::money, 20, 'bid');
-select create_trade(29,28,20);
+select create_trade(29,28,10);
 select create_trade(30,28,10);
 select create_trade(30,28,10);
 
+select create_order(1,1,10::money,40, 'bid');
+select create_order(7,1,10::money,40, 'offer');
+select create_trade(31, 32, 40);
+select create_order(1,2,10::money,40, 'bid');
+select create_order(8,2,10::money,40, 'offer');
+select create_trade(33, 34, 40);
+
+select * from all_active_orders_on_market(6);
 
 select close_market_human('MSE');
 select close_market_human('SPSE');
@@ -128,3 +136,10 @@ select make_broker_movement_fund(100::money,'output',9,'output test');
 select make_broker_movement_fund(100::money,'output',10,'output test');
 select make_broker_movement_fund(100::money,'output',11,'output test');
 select make_broker_movement_fund(100::money,'output',12,'output test');
+
+SELECT instrument, quantity from instruments_in_depository_by_account_number(1);
+SELECT instrument, quantity from instruments_in_depository_by_trader_id(1);
+select * from movement_fund_hisory_by_acount_number(1);
+select * from trade_history_by_date_interval(CURRENT_TIMESTAMP - interval '1 day', CURRENT_TIMESTAMP, 1);
+select * from trade_history_by_account_number(2);
+select * from commision_income_by_broker_id(1);
