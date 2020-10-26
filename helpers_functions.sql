@@ -10,7 +10,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument % not found', instrument_id;
      END IF;
 
-     IF instrument.delete_date IS NOT NULL THEN
+     IF instrument.deleted_time IS NOT NULL THEN
         RAISE EXCEPTION 'Instrument % is deleted', instrument_id;
      END IF;
 
@@ -31,7 +31,7 @@ BEGIN
         RAISE EXCEPTION 'Instrument template % not found', instrument_template_code;
      END IF;
 
-     IF instrument_template.delete_date IS NOT NULL THEN
+     IF instrument_template.deleted_time IS NOT NULL THEN
         RAISE EXCEPTION 'Instrument template % is deleted', instrument_template_code;
      END IF;
 

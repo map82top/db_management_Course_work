@@ -132,7 +132,7 @@ BEGIN
 
      FOR order_id IN
         SELECT o.id FROM instrument inst JOIN order_ o ON inst.id = o.instrument_id
-        WHERE inst.delete_date IS NULL AND inst.market_id = market.id
+        WHERE inst.deleted_time IS NULL AND inst.market_id = market.id
             AND o.cancel_time IS NULL AND o.status != 'cancelled' AND o.status != 'filled'
      LOOP
         PERFORM cancel_order(order_id);

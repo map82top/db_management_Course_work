@@ -1,4 +1,6 @@
 CREATE ROLE exchange_system LOGIN ENCRYPTED PASSWORD 'Testpwd1' VALID UNTIL 'infinity';
+CREATE ROLE trader LOGIN ENCRYPTED PASSWORD 'Testpwd1' VALID UNTIL 'infinity';
+CREATE ROLE broker LOGIN ENCRYPTED PASSWORD 'Testpwd1' VALID UNTIL 'infinity';
 
 CREATE DATABASE exchange_db
 	WITH OWNER = exchange_system

@@ -73,7 +73,7 @@ CREATE TABLE instrument_template (
         maturity_date timestamp,
         emission_volume bigint NOT NULL,
         emission_date timestamp NOT NULL,
-        delete_date timestamp,
+        deleted_time timestamp,
         nominal_price numeric(2) NOT NULL,
         instrument_type instrument_type NOT NULL,
         currency smallint NOT NULL REFERENCES currency(id)
@@ -86,16 +86,16 @@ ALTER TABLE instrument_template
     ADD CONSTRAINT bond_required_maturity_date CHECK(instrument_type = 'bond' AND maturity_date IS NOT NULL OR maturity_date IS NULL),
     ADD CONSTRAINT instrument_code_template CHECK(instrument_code ~ '[0-9]{4,6}'),
     ADD CONSTRAINT isin_template CHECK(isin ~ '[A-Za-z]{2}[A-Za-z0-9]{9}[0-9]'),
-    ADD CONSTRAINT emission_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > emission_date OR delete_date IS NULL),
+    ADD CONSTRAINT emission_date_less_deleted_time CHECK(deleted_time IS NOT NULL AND deleted_time > emission_date OR deleted_time IS NULL),
     ADD CONSTRAINT coupon_amount_more_zero CHECK(coupon_amount > 0),
     ADD CONSTRAINT coupon_rate_zero CHECK(coupon_rate > 0::numeric(2)),
     ADD CONSTRAINT coupon_payment_frequency_more_zero CHECK(coupon_payment_frequency > 0);
 
 CREATE TABLE instrument (
         id serial PRIMARY KEY,
-        delete_date timestamp,
+        deleted_time timestamp,
         lot_size int NOT NULL CONSTRAINT instrument_lot_size CHECK(lot_size > 0),
-        trading_start_date date NOT NULL CONSTRAINT trading_start_date_less_delete_date CHECK(delete_date IS NOT NULL AND delete_date > trading_start_date OR delete_date IS NULL),
+        trading_start_date date NOT NULL CONSTRAINT trading_start_date_less_deleted_time CHECK(deleted_time IS NOT NULL AND deleted_time > trading_start_date OR deleted_time IS NULL),
         instrument_template_code varchar(6) NOT NULL REFERENCES  instrument_template(instrument_code),
         market_id smallint NOT NULL REFERENCES market(id)
 );

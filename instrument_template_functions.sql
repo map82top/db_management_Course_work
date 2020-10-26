@@ -54,7 +54,7 @@ BEGIN
         PERFORM delete_instrument(instrument_.id);
     END LOOP;
 
-    UPDATE instrument_template SET delete_date = now() where instrument_template.instrument_code = remove_instrument_template.instrument_code;
+    UPDATE instrument_template SET deleted_time = now() where instrument_template.instrument_code = remove_instrument_template.instrument_code;
 
 END;
 $BODY$
