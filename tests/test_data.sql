@@ -147,3 +147,8 @@ select * from commision_income_by_broker_id(1);
 
 select * from total_trading_volume_by_instrument_id(1);
 select * from total_trading_volume_by_broker_id(1, CURRENT_TIMESTAMP - interval '1 day', CURRENT_TIMESTAMP);
+
+SELECT * FROM total_income_for_account(1);
+SELECT * FROM total_income_for_trader(1);
+SELECT * FROM total_instruments_on_account_clients(1);
+SELECT * FROM risk_of_clients(1);

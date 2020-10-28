@@ -280,4 +280,131 @@ BEGIN
     );
 END;
 $BODY$ 
-LANGUAGE plpgsql; 
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE VIEW current_prices AS
+    SELECT DISTINCT ON (1) o.instrument_id AS instrument, o.price FROM trade t JOIN order_ o ON bid_order_id = o.id
+    ORDER BY 1, t.trade_date DESC;
+
+CREATE OR REPLACE VIEW float_cash_in_trader_acounts AS
+    SELECT mf.account_id AS account_number,
+    SUM(CASE WHEN mf.direction = 'input' then mf.amount else 0::money end)
+                - SUM(CASE WHEN mf.direction = 'output' then mf.amount else 0::money end) AS float_cash
+    FROM movement_fund mf JOIN account a ON a.number = mf.account_id
+    WHERE trader_initiator_id IS NULL AND initiator_type != 'trader' AND a.trader_code IS NOT NULL
+    GROUP BY mf.account_id;
+
+CREATE OR REPLACE VIEW clean_cash_in_trader_acounts AS
+    SELECT mf.account_id AS account_number,
+    SUM(CASE WHEN mf.direction = 'input' then mf.amount else 0::money end)
+                - SUM(CASE WHEN mf.direction = 'output' then mf.amount else 0::money end) + fcta.float_cash AS clean_cash
+    FROM movement_fund mf JOIN float_cash_in_trader_acounts fcta ON mf.account_id = fcta.account_number
+    WHERE trader_initiator_id IS NOT NULL AND initiator_type = 'trader'
+    GROUP BY mf.account_id, fcta.float_cash;
+
+CREATE OR REPLACE VIEW quantity_instrument_on_accounts AS
+    SELECT account.number as account_number,
+            instrument.id as instrument,
+                SUM(CASE WHEN depository.direction = 'input' then depository.quantity else 0 end)
+                - SUM(CASE WHEN depository.direction = 'output' then depository.quantity else 0 end) AS quantity
+    FROM account join depository on account.number = depository.account_number
+                 join instrument on depository.instrument_id = instrument.id
+                 GROUP BY account.number, instrument.id;
+
+CREATE OR REPLACE FUNCTION total_income_for_account(account_number int)
+RETURNS TABLE
+(
+    income money
+)
+AS $BODY$
+DECLARE
+    account RECORD;
+BEGIN
+     SELECT * INTO account FROM get_account($1);
+
+     IF account.trader_code IS NULL THEN
+          RAISE EXCEPTION 'Account % not belong to trader', account_number;
+     END IF;
+
+     RETURN QUERY (
+        SELECT SUM(qia.quantity * cp.price) + fcta.float_cash AS income
+        FROM quantity_instrument_on_accounts qia JOIN current_prices cp ON qia.instrument = cp.instrument
+        JOIN float_cash_in_trader_acounts fcta ON fcta.account_number = qia.account_number
+        WHERE qia.account_number = $1
+        GROUP BY qia.account_number, fcta.float_cash
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION total_income_for_trader(trader_id int)
+RETURNS TABLE
+(
+    income money
+)
+AS $BODY$
+BEGIN
+     RETURN QUERY (
+        SELECT SUM(qia.quantity * cp.price) + fcta.float_cash AS income
+        FROM quantity_instrument_on_accounts qia JOIN current_prices cp ON qia.instrument = cp.instrument
+        JOIN float_cash_in_trader_acounts fcta ON fcta.account_number = qia.account_number
+        JOIN account a ON a.trader_code = trader_id AND qia.account_number = a.number
+        GROUP BY a.trader_code, fcta.float_cash
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION total_instruments_on_account_clients(broker_id int)
+RETURNS TABLE
+(
+    instrument int,
+    quantity bigint
+)
+AS $BODY$
+BEGIN
+     RETURN QUERY (
+        SELECT qia.instrument,
+        SUM(qia.quantity::bigint)::bigint as quantity
+        FROM account a JOIN quantity_instrument_on_accounts qia ON qia.account_number = a.number
+        WHERE a.broker_code = broker_id AND a.trader_code IS NOT NULL
+        GROUP BY qia.instrument
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION risk_of_clients(broker_id int)
+RETURNS TABLE
+(
+    trader varchar(46),
+    risk varchar(10)
+)
+AS $BODY$
+BEGIN
+     RETURN QUERY (
+         SELECT
+            coef.trader,
+            (CASE
+                    WHEN coef > 2 OR coef < 0 THEN 'ZERO'
+                    WHEN coef < 2 AND coef > 1 THEN 'STABLE'
+                    WHEN coef < 1 AND coef > 0.75 THEN 'MODERATE'
+                    WHEN coef < 0.75 THEN 'DANGER'
+             END)::varchar(10) AS risk
+         FROM (
+            SELECT CONCAT(t.first_name, ' ', t.last_name)::varchar(46) AS trader,
+            (-1) * ((SUM(qia.quantity * cp.price) + ccta.clean_cash) / fcta.float_cash) AS coef
+            FROM account a JOIN quantity_instrument_on_accounts qia ON qia.account_number = a.number
+            JOIN current_prices cp ON qia.instrument = cp.instrument
+            JOIN float_cash_in_trader_acounts fcta ON fcta.account_number = qia.account_number
+            JOIN clean_cash_in_trader_acounts ccta ON ccta.account_number = qia.account_number
+            JOIN trader t ON t.id = a.trader_code
+            WHERE a.broker_code = broker_id AND a.trader_code IS NOT NULL
+            GROUP BY a.trader_code, t.first_name, t.last_name, fcta.float_cash, ccta.clean_cash
+        ) AS coef
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
+

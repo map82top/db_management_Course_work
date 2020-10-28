@@ -122,3 +122,8 @@ GRANT SELECT, INSERT ON account TO broker;
 GRANT UPDATE (current_funds) ON account TO broker;
 GRANT SELECT ON account TO trader;
 GRANT UPDATE (current_funds) ON account TO trader;
+
+GRANT SELECT ON current_prices TO exchange_system, broker, trader;
+GRANT SELECT ON float_cash_in_trader_acounts TO exchange_system, broker;
+GRANT SELECT ON clean_cash_in_trader_acounts TO exchange_system, broker;
+GRANT SELECT ON quantity_instrument_on_accounts TO exchange_system, broker;
