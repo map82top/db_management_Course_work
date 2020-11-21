@@ -23,8 +23,8 @@ GRANT SELECT ON market TO trader;
 
 -- instrument_template
 ALTER TABLE instrument_template ENABLE ROW LEVEL SECURITY;
-CREATE POLICY system_instrument_template_select ON instrument_template FOR SELECT TO exchange_system  USING (true);
-CREATE POLICY system_instrument_template_update ON instrument_template FOR UPDATE TO exchange_system  USING (true) WITH CHECK (true);
+CREATE POLICY system_instrument_template_select ON instrument_template FOR SELECT TO exchange_system USING (true);
+CREATE POLICY system_instrument_template_update ON instrument_template FOR UPDATE TO exchange_system USING (true) WITH CHECK (true);
 CREATE POLICY system_instrument_template_insert ON instrument_template FOR INSERT TO exchange_system WITH CHECK(deleted_time IS NULL);
 CREATE POLICY instrument_template_all_view ON instrument_template FOR SELECT USING (true);
 GRANT SELECT, INSERT, UPDATE ON instrument_template TO exchange_system;
@@ -123,75 +123,7 @@ GRANT UPDATE (current_funds, deleted_time) ON account TO broker;
 GRANT SELECT ON account TO trader;
 GRANT UPDATE (current_funds) ON account TO trader;
 
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO exchange_system;
-REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM trader;
-REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM broker;
-
 GRANT SELECT ON current_prices TO exchange_system, broker, trader;
-GRANT SELECT ON float_cash_in_trader_acounts TO exchange_system, broker;
-GRANT SELECT ON clean_cash_in_trader_acounts TO exchange_system, broker;
-GRANT SELECT ON quantity_instrument_on_accounts TO broker, exchange_system;
-
-GRANT EXECUTE ON FUNCTION create_account TO broker;
-GRANT EXECUTE ON FUNCTION delete_account TO broker;
-GRANT EXECUTE ON FUNCTION count_instrument_on_account TO broker;
-GRANT EXECUTE ON FUNCTION count_instrument_on_account TO trader;
-GRANT EXECUTE ON FUNCTION delete_account TO broker;
-
-GRANT EXECUTE ON FUNCTION get_instrument TO broker;
-GRANT EXECUTE ON FUNCTION get_instrument TO trader;
-GRANT EXECUTE ON FUNCTION get_instrument_template TO broker;
-GRANT EXECUTE ON FUNCTION get_instrument_template TO trader;
-GRANT EXECUTE ON FUNCTION get_order TO broker;
-GRANT EXECUTE ON FUNCTION get_order TO trader;
-GRANT EXECUTE ON FUNCTION get_trader TO broker;
-GRANT EXECUTE ON FUNCTION get_trader TO trader;
-GRANT EXECUTE ON FUNCTION get_account TO broker;
-GRANT EXECUTE ON FUNCTION get_account TO trader;
-GRANT EXECUTE ON FUNCTION get_market TO broker;
-GRANT EXECUTE ON FUNCTION get_market TO trader;
-GRANT EXECUTE ON FUNCTION currency_exist TO broker;
-GRANT EXECUTE ON FUNCTION currency_exist TO trader;
-GRANT EXECUTE ON FUNCTION time_zone_exist TO broker;
-GRANT EXECUTE ON FUNCTION time_zone_exist TO trader;
-GRANT EXECUTE ON FUNCTION country_exist TO broker;
-GRANT EXECUTE ON FUNCTION country_exist TO trader;
-GRANT EXECUTE ON FUNCTION iif_sql TO broker;
-GRANT EXECUTE ON FUNCTION iif_sql TO trader;
-
-GRANT EXECUTE ON FUNCTION make_trader_movement_fund TO trader;
-GRANT EXECUTE ON FUNCTION make_broker_movement_fund TO broker;
-
-GRANT EXECUTE ON FUNCTION cancel_order TO broker;
-
-GRANT EXECUTE ON FUNCTION create_trade TO broker;
-
-GRANT EXECUTE ON FUNCTION instruments_in_depository_by_account_number TO broker;
-GRANT EXECUTE ON FUNCTION instruments_in_depository_by_account_number TO trader;
-
-GRANT EXECUTE ON FUNCTION instruments_in_depository_by_trader_id TO trader;
-GRANT EXECUTE ON FUNCTION instruments_in_depository_by_trader_id TO broker;
-
-GRANT EXECUTE ON FUNCTION movement_fund_hisory_by_acount_number TO broker;
-GRANT EXECUTE ON FUNCTION movement_fund_hisory_by_acount_number TO trader;
-
-GRANT EXECUTE ON FUNCTION trade_history_by_date_interval TO broker;
-GRANT EXECUTE ON FUNCTION all_active_orders_on_market TO broker;
-GRANT EXECUTE ON FUNCTION all_active_orders_on_market TO trader;
-
-GRANT EXECUTE ON FUNCTION trade_history_by_account_number TO broker;
-GRANT EXECUTE ON FUNCTION trade_history_by_account_number TO trader;
-
-GRANT EXECUTE ON FUNCTION commision_income_by_broker_id TO broker;
-GRANT EXECUTE ON FUNCTION get_order_statuses_by_trader_id TO broker;
-GRANT EXECUTE ON FUNCTION get_order_statuses_by_trader_id TO trader;
-
-GRANT EXECUTE ON FUNCTION total_trading_volume_by_instrument_id TO broker;
-GRANT EXECUTE ON FUNCTION total_trading_volume_by_broker_id TO broker;
-
-GRANT EXECUTE ON FUNCTION total_instruments_on_account_clients TO broker;
-GRANT EXECUTE ON FUNCTION risk_of_clients TO broker;
-
-GRANT EXECUTE ON FUNCTION total_income_for_account TO trader;
-GRANT EXECUTE ON FUNCTION total_income_for_trader TO trader;
-GRANT EXECUTE ON FUNCTION total_income_for_trader TO trader;
+GRANT SELECT ON float_cash_in_trader_acounts TO exchange_system, broker, trader;
+GRANT SELECT ON clean_cash_in_trader_acounts TO exchange_system, broker, trader;
+GRANT SELECT ON quantity_instrument_on_accounts TO broker, exchange_system, trader;
