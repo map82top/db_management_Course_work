@@ -408,6 +408,93 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
-
+CREATE OR REPLACE FUNCTION instruments_analitic(start_period timestamptz, end_period timestamptz)
+RETURNS TABLE
+(
+    instrument varchar(20),
+    market varchar(60),
+    instrument_type instrument_type,
+    start_price money,
+    end_price money,
+    change_in_persent float,
+    status varchar(20)
+)
+AS $BODY$
+BEGIN
+     RETURN QUERY (
+     SELECT
+            base.instrument,
+            base.market,
+            base.instrument_type,
+            base.start_price,
+            base.end_price,
+            base.change_in_persent,
+            (CASE
+                    WHEN base.change_in_persent > 200 AND base.time_delta > interval '1 year' AND base.instrument_type = 'share' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent <= 200 AND base.change_in_persent > 100 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'PERFECT'
+                    WHEN base.change_in_persent <= 100 AND base.change_in_persent > 50 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'NORMAL'
+                    WHEN base.change_in_persent <= 50 AND base.change_in_persent > 0 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'LOW'
+                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -50 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'STAGING'
+                    WHEN base.change_in_persent <= -50 AND base.time_delta > interval '1 year' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
+                    WHEN base.change_in_persent > 100 AND base.time_delta > interval '6 month' AND base.instrument_type = 'share' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent <= 100 AND base.change_in_persent > 30 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'PERFECT'
+                    WHEN base.change_in_persent <= 30 AND base.change_in_persent > 5 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'NORMAL'
+                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 0 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'LOW'
+                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -30 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'STAGING'
+                    WHEN base.change_in_persent <= -30 AND base.time_delta > interval '6 month' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
+                    WHEN base.change_in_persent > 50 AND base.time_delta > interval '1 month' AND base.instrument_type = 'share' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent <= 50 AND base.change_in_persent > 15 AND base.time_delta >= interval '1 month' month AND base.instrument_type = 'share' THEN 'PERFECT'
+                    WHEN base.change_in_persent <= 15 AND base.change_in_persent > 5 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'NORMAL'
+                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 0 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'LOW'
+                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -15 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'STAGING'
+                    WHEN base.change_in_persent <= -15 AND base.time_delta > interval '1 month' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
+                    WHEN base.change_in_persent > 15 AND base.time_delta > interval '7 day' AND base.instrument_type = 'share' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent <= 15 AND base.change_in_persent > 5 AND base.time_delta >= interval '7 day' month AND base.instrument_type = 'share' THEN 'PERFECT'
+                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 3 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'NORMAL'
+                    WHEN base.change_in_persent <= 3 AND base.change_in_persent > 0 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'LOW'
+                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -10 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'STAGING'
+                    WHEN base.change_in_persent <= -10 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
+                    WHEN base.change_in_persent > 10 AND base.instrument_type = 'share' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent <= 10 AND base.change_in_persent > 7 AND base.instrument_type = 'share' THEN 'PERFECT'
+                    WHEN base.change_in_persent <= 7 AND base.change_in_persent > 3 AND base.instrument_type = 'share' THEN 'NORMAL'
+                    WHEN base.change_in_persent <= 3 AND base.change_in_persent > 0 AND base.instrument_type = 'share' THEN 'LOW'
+                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -10 AND base.instrument_type = 'share' THEN 'STAGING'
+                    WHEN base.change_in_persent <= -10 AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
+                    WHEN base.change_in_persent > 15 AND base.change_in_persent < -15 AND base.instrument_type = 'bond' THEN 'ABNORMAL'
+                    WHEN base.change_in_persent > 5 AND base.change_in_persent <= 15 AND base.instrument_type = 'bond' THEN 'OVERVALUED'
+                    WHEN base.change_in_persent <= 5 AND base.change_in_persent >= -5  AND base.instrument_type = 'bond' THEN 'NORMAL'
+                    WHEN base.change_in_persent < -5 AND base.change_in_persent >= -15  AND base.instrument_type = 'bond' THEN 'STAGING'
+             END)::varchar(20) AS status
+     FROM (
+     SELECT
+            se.instrument,
+            se.market,
+            se.instrument_type,
+            se.start_price,
+            se.end_price,
+            se.end_price / (se.start_price / 100) - 100 as change_in_persent,
+            start_period - end_period AS time_delta
+         FROM (
+             SELECT
+             it.short_name as instrument,
+             m.name as market,
+             it.instrument_type,
+             (SELECT t.price FROM order_ o JOIN trade t ON o.id = t.bid_order_id OR O.id = offer_order_id
+             WHERE t.trade_date >= start_period and t.trade_date <= end_period and inst.id = o.instrument_id
+             ORDER BY t.trade_date ASC, t.price ASC
+             LIMIT 1) as start_price,
+             (SELECT t.price FROM order_ o JOIN trade t ON o.id = t.bid_order_id OR O.id = offer_order_id
+             WHERE t.trade_date >= start_period and t.trade_date <= end_period and inst.id = o.instrument_id
+             ORDER BY t.trade_date DESC, t.price DESC
+             LIMIT 1) as end_price
+             FROM instrument inst JOIN instrument_template it ON inst.instrument_template_code = it.instrument_code
+             JOIN market m ON m.id = inst.market_id
+             GROUP BY inst.id, inst.market_id, it.short_name, m.name, it.instrument_type
+         ) as se
+        ) as base
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
 
 
