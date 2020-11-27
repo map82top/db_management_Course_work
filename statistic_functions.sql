@@ -408,6 +408,28 @@ END;
 $BODY$
 LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION calc_instrument_growth_coef(start_period timestamptz, end_period timestamptz, start_price money, end_price money)
+RETURNS FLOAT
+AS $BODY$
+DECLARE
+    change_in_persent int;
+    duration_in_days int;
+    a float := 70 /1200;
+    b float := 660 / 605;
+BEGIN
+    change_in_persent := end_price / (start_price / 100) - 100;
+    duration_in_days := EXTRACT(epoch FROM end_period - start_period) / (60 * 60 * 24);
+
+    IF duration_in_days <= 0 THEN
+        duration_in_days := 1;
+    END IF;
+
+    RETURN change_in_persent / duration_in_days * (a * duration_in_days + b);
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION instruments_analitic(start_period timestamptz, end_period timestamptz)
 RETURNS TABLE
 (
@@ -430,40 +452,22 @@ BEGIN
             base.end_price,
             base.change_in_persent,
             (CASE
-                    WHEN base.change_in_persent > 200 AND base.time_delta > interval '1 year' AND base.instrument_type = 'share' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent <= 200 AND base.change_in_persent > 100 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'PERFECT'
-                    WHEN base.change_in_persent <= 100 AND base.change_in_persent > 50 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'NORMAL'
-                    WHEN base.change_in_persent <= 50 AND base.change_in_persent > 0 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'LOW'
-                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -50 AND base.time_delta >= interval '1 year' AND base.instrument_type = 'share' THEN 'STAGING'
-                    WHEN base.change_in_persent <= -50 AND base.time_delta > interval '1 year' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
-                    WHEN base.change_in_persent > 100 AND base.time_delta > interval '6 month' AND base.instrument_type = 'share' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent <= 100 AND base.change_in_persent > 30 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'PERFECT'
-                    WHEN base.change_in_persent <= 30 AND base.change_in_persent > 5 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'NORMAL'
-                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 0 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'LOW'
-                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -30 AND base.time_delta >= interval '6 month' AND base.instrument_type = 'share' THEN 'STAGING'
-                    WHEN base.change_in_persent <= -30 AND base.time_delta > interval '6 month' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
-                    WHEN base.change_in_persent > 50 AND base.time_delta > interval '1 month' AND base.instrument_type = 'share' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent <= 50 AND base.change_in_persent > 15 AND base.time_delta >= interval '1 month' month AND base.instrument_type = 'share' THEN 'PERFECT'
-                    WHEN base.change_in_persent <= 15 AND base.change_in_persent > 5 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'NORMAL'
-                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 0 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'LOW'
-                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -15 AND base.time_delta >= interval '1 month' AND base.instrument_type = 'share' THEN 'STAGING'
-                    WHEN base.change_in_persent <= -15 AND base.time_delta > interval '1 month' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
-                    WHEN base.change_in_persent > 15 AND base.time_delta > interval '7 day' AND base.instrument_type = 'share' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent <= 15 AND base.change_in_persent > 5 AND base.time_delta >= interval '7 day' month AND base.instrument_type = 'share' THEN 'PERFECT'
-                    WHEN base.change_in_persent <= 5 AND base.change_in_persent > 3 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'NORMAL'
-                    WHEN base.change_in_persent <= 3 AND base.change_in_persent > 0 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'LOW'
-                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -10 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'STAGING'
-                    WHEN base.change_in_persent <= -10 AND base.time_delta >= interval '7 day' AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
-                    WHEN base.change_in_persent > 10 AND base.instrument_type = 'share' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent <= 10 AND base.change_in_persent > 7 AND base.instrument_type = 'share' THEN 'PERFECT'
-                    WHEN base.change_in_persent <= 7 AND base.change_in_persent > 3 AND base.instrument_type = 'share' THEN 'NORMAL'
-                    WHEN base.change_in_persent <= 3 AND base.change_in_persent > 0 AND base.instrument_type = 'share' THEN 'LOW'
-                    WHEN base.change_in_persent <= 0 AND base.change_in_persent > -10 AND base.instrument_type = 'share' THEN 'STAGING'
-                    WHEN base.change_in_persent <= -10 AND base.instrument_type = 'share' THEN 'HIGH_STAGING'
-                    WHEN base.change_in_persent > 15 AND base.change_in_persent < -15 AND base.instrument_type = 'bond' THEN 'ABNORMAL'
-                    WHEN base.change_in_persent > 5 AND base.change_in_persent <= 15 AND base.instrument_type = 'bond' THEN 'OVERVALUED'
-                    WHEN base.change_in_persent <= 5 AND base.change_in_persent >= -5  AND base.instrument_type = 'bond' THEN 'NORMAL'
-                    WHEN base.change_in_persent < -5 AND base.change_in_persent >= -15  AND base.instrument_type = 'bond' THEN 'STAGING'
+                WHEN base.instrument_type = 'bond' THEN
+                    (CASE
+                        WHEN base.growth_coef > 15  THEN 'ABNORMAL'
+                        WHEN base.growth_coef <= 15 AND  base.growth_coef >= 5 THEN 'PERFECT'
+                        WHEN base.growth_coef < 5 AND base.growth_coef >= 2 THEN 'NORMAL'
+                        WHEN base.growth_coef < 2 AND base.growth_coef >= 0 THEN 'LOW'
+                        WHEN base.growth_coef < 0 AND base.growth_coef >= -5 THEN 'STAGING'
+                        WHEN base.growth_coef < -5 THEN 'HIGH_STAGING'
+                    END)
+                WHEN  base.instrument_type = 'share' THEN
+                     (CASE
+                        WHEN base.change_in_persent > 15 AND base.change_in_persent < -15 THEN 'ABNORMAL'
+                        WHEN base.change_in_persent > 5 AND base.change_in_persent <= 15 THEN 'OVERVALUED'
+                        WHEN base.change_in_persent <= 5 AND base.change_in_persent >= -5 THEN 'NORMAL'
+                        WHEN base.change_in_persent < -5 AND base.change_in_persent >= -15 THEN 'STAGING'
+                     END)
              END)::varchar(20) AS status
      FROM (
      SELECT
@@ -473,7 +477,7 @@ BEGIN
             se.start_price,
             se.end_price,
             se.end_price / (se.start_price / 100) - 100 as change_in_persent,
-            start_period - end_period AS time_delta
+            calc_instrument_growth_coef(start_period, end_period, se.start_price, se.end_price) AS growth_coef
          FROM (
              SELECT
              it.short_name as instrument,
