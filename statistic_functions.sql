@@ -452,7 +452,7 @@ BEGIN
             base.end_price,
             base.change_in_persent,
             (CASE
-                WHEN base.instrument_type = 'bond' THEN
+                WHEN base.instrument_type = 'share' THEN
                     (CASE
                         WHEN base.growth_coef > 15  THEN 'ABNORMAL'
                         WHEN base.growth_coef <= 15 AND  base.growth_coef >= 5 THEN 'PERFECT'
@@ -461,9 +461,9 @@ BEGIN
                         WHEN base.growth_coef < 0 AND base.growth_coef >= -5 THEN 'STAGING'
                         WHEN base.growth_coef < -5 THEN 'HIGH_STAGING'
                     END)
-                WHEN  base.instrument_type = 'share' THEN
+                WHEN  base.instrument_type = 'bond' THEN
                      (CASE
-                        WHEN base.change_in_persent > 15 AND base.change_in_persent < -15 THEN 'ABNORMAL'
+                        WHEN base.change_in_persent > 15 OR base.change_in_persent < -15 THEN 'ABNORMAL'
                         WHEN base.change_in_persent > 5 AND base.change_in_persent <= 15 THEN 'OVERVALUED'
                         WHEN base.change_in_persent <= 5 AND base.change_in_persent >= -5 THEN 'NORMAL'
                         WHEN base.change_in_persent < -5 AND base.change_in_persent >= -15 THEN 'STAGING'
