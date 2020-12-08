@@ -78,6 +78,7 @@ GRANT SELECT ON depository TO trader;
 ALTER TABLE order_ ENABLE ROW LEVEL SECURITY;
 CREATE POLICY system_order_all ON order_ TO exchange_system USING (true) WITH CHECK (true);
 CREATE POLICY order_all_view ON order_ FOR SELECT USING (true);
+CREATE POLICY broker_update_order ON order_ FOR UPDATE TO broker USING (true);
 GRANT SELECT, INSERT, UPDATE ON order_ TO exchange_system;
 GRANT SELECT ON order_ TO broker;
 GRANT UPDATE (cancel_time, status) ON order_ TO broker;

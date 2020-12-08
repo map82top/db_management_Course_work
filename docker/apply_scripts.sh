@@ -34,7 +34,9 @@ echo Performed market_functions
 docker exec -i study_postgres psql -U postgres -h localhost -d exchange_db < ../trade_functions.sql
 echo Performed trade_function
 docker exec -i study_postgres psql -U postgres -h localhost -d exchange_db < ../statistic_functions.sql
+echo Performed trigger
+docker exec -i study_postgres psql -U postgres -h localhost -d exchange_db < ../trigger.sql
 echo Performed security
 docker exec -i study_postgres psql -U postgres -h localhost -d exchange_db < ../security.sql
-echo Performed security
+echo Filled test data
 docker exec -i study_postgres psql -U exchange_system -h localhost -d exchange_db < ../tests/test_data.sql
