@@ -9,8 +9,8 @@ DECLARE
 BEGIN
     SELECT * INTO account_ FROM get_account(number);
     RETURN QUERY (SELECT instrument_template.short_name as instrument, 
-                SUM(CASE WHEN depository.direction = 'input' then depository.quantity else 0 end) 
-                - SUM(CASE WHEN depository.direction = 'output' then depository.quantity else 0 end)
+                (SUM(CASE WHEN depository.direction = 'input' then depository.quantity else 0 end) 
+                - SUM(CASE WHEN depository.direction = 'output' then depository.quantity else 0 end))
     from account join depository on account.number = depository.account_number
                  join instrument on depository.instrument_id = instrument.id
                  join instrument_template on instrument.instrument_template_code = instrument_template.instrument_code
@@ -287,6 +287,19 @@ CREATE OR REPLACE VIEW current_prices AS
     SELECT DISTINCT ON (1) o.instrument_id AS instrument, o.price FROM trade t JOIN order_ o ON bid_order_id = o.id
     ORDER BY 1, t.trade_date DESC;
 
+CREATE OR REPLACE VIEW instrument_volume AS 
+    SELECT it.short_name sn, 
+    (CASE 
+        WHEN SUM(t.quantity) > 0 THEN SUM(t.quantity)
+        ELSE 0
+    END) as volume 
+    FROM instrument i 
+            JOIN instrument_template it on i.instrument_template_code = it.instrument_code
+            left JOIN order_ o on i.id = o.instrument_id
+            left JOIN trade t on t.bid_order_id = o.id
+            GROUP BY it.short_name;    
+                              
+
 CREATE OR REPLACE VIEW float_cash_in_trader_acounts AS
     SELECT mf.account_id AS account_number,
     SUM(CASE WHEN mf.direction = 'input' then mf.amount else 0::money end)
@@ -430,7 +443,9 @@ $BODY$
 LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION instruments_analitic(start_period timestamptz, end_period timestamptz)
+CREATE OR REPLACE FUNCTION instruments_analitic(start_period timestamptz, end_period timestamptz,
+abnormal_share int, perfect_share int, normal_share int, low_share int, staging_share int,
+bond_abnormal_upper int, bond_abnormal_lower int, bond_overvalued int, bond_normal int)
 RETURNS TABLE
 (
     instrument varchar(20),
@@ -454,19 +469,19 @@ BEGIN
             (CASE
                 WHEN base.instrument_type = 'share' THEN
                     (CASE
-                        WHEN base.growth_coef > 15  THEN 'ABNORMAL'
-                        WHEN base.growth_coef <= 15 AND  base.growth_coef >= 5 THEN 'PERFECT'
-                        WHEN base.growth_coef < 5 AND base.growth_coef >= 2 THEN 'NORMAL'
-                        WHEN base.growth_coef < 2 AND base.growth_coef >= 0 THEN 'LOW'
-                        WHEN base.growth_coef < 0 AND base.growth_coef >= -5 THEN 'STAGING'
-                        WHEN base.growth_coef < -5 THEN 'HIGH_STAGING'
+                        WHEN base.growth_coef > abnormal_share  THEN 'ABNORMAL'
+                        WHEN base.growth_coef <= abnormal_share AND  base.growth_coef >= perfect_share THEN 'PERFECT'
+                        WHEN base.growth_coef < perfect_share AND base.growth_coef >= normal_share THEN 'NORMAL'
+                        WHEN base.growth_coef < normal_share AND base.growth_coef >= low_share THEN 'LOW'
+                        WHEN base.growth_coef < low_share AND base.growth_coef >= staging_share THEN 'STAGING'
+                        WHEN base.growth_coef < staging_share THEN 'HIGH_STAGING'
                     END)
                 WHEN  base.instrument_type = 'bond' THEN
                      (CASE
-                        WHEN base.change_in_persent > 15 OR base.change_in_persent < -15 THEN 'ABNORMAL'
-                        WHEN base.change_in_persent > 5 AND base.change_in_persent <= 15 THEN 'OVERVALUED'
-                        WHEN base.change_in_persent <= 5 AND base.change_in_persent >= -5 THEN 'NORMAL'
-                        WHEN base.change_in_persent < -5 AND base.change_in_persent >= -15 THEN 'STAGING'
+                        WHEN base.change_in_persent > bond_abnormal_upper or base.change_in_persent < bond_abnormal_lower THEN 'ABNORMAL'
+                        WHEN base.change_in_persent > bond_overvalued AND base.change_in_persent <= bond_abnormal_upper THEN 'OVERVALUED'
+                        WHEN base.change_in_persent <= bond_overvalued AND base.change_in_persent >= bond_normal THEN 'NORMAL'
+                        WHEN base.change_in_persent < bond_normal AND base.change_in_persent >= bond_abnormal_lower THEN 'STAGING'
                      END)
              END)::varchar(20) AS status
      FROM (
@@ -495,10 +510,151 @@ BEGIN
              JOIN market m ON m.id = inst.market_id
              GROUP BY inst.id, inst.market_id, it.short_name, m.name, it.instrument_type
          ) as se
-        ) as base
+        ) as base);
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION rating_of_instruments(super_popular numeric, popular numeric, pre_popular numeric, moderate numeric)
+RETURNS TABLE
+(
+    instrument varchar(100),
+    precent_ numeric,
+    rating VARCHAR(10)
+)
+AS $BODY$
+BEGIN
+    RETURN QUERY (
+        SELECT sn as instrument, precent,
+        (CASE
+            WHEN precent > super_popular THEN 'SUPER POPULAR'
+            WHEN precent < super_popular AND precent > popular THEN 'POPULAR'
+            WHEN precent < popular AND precent > pre_popular THEN 'PRE-POPULAR'
+            WHEN precent < pre_popular AND precent > moderate THEN 'MODERATE'
+            WHEN precent < moderate THEN 'DARK HORSE'
+        END)::varchar(10) as rating
+        FROM
+        (
+            SELECT sn, (volume/(SELECT SUM(volume) from instrument_volume))*100 as precent
+            FROM instrument_volume
+        ) as volume_prеcent
+        ORDER BY precent
     );
 END;
 $BODY$
 LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION traders_rating(broker_id int, large_profiter numeric, moderate numeric) 
+RETURNS TABLE 
+(
+    trader varchar(100),
+    rating varchar(30)
+)
+AS $BODY$ 
+DECLARE
+    broker_ RECORD; 
+BEGIN
+    SELECT * into broker_ from get_broker(broker_id);
+
+    RETURN QUERY (
+        SELECT trader_name, 
+        (CASE
+            WHEN procent > large_profiter THEN 'Large profiter'
+            WHEN procent <= large_profiter and procent > moderate THEN 'Moderate profiter'
+            WHEN procent <= moderate THEN 'Dead weight'
+        END)::varchar(30) as rating
+        FROM
+        (SELECT trader_name, commission/(SELECT SUM(commission) from commissions where broker_.name = broker_name)*100 as procent
+        FROM commissions 
+        where broker_.name = broker_name) as commission_procent
+    );
+END;
+$BODY$ 
+LANGUAGE plpgsql; 
+
+CREATE OR REPLACE VIEW commissions AS
+(
+    SELECT tr.first_name as trader_name, b.name as broker_name, 
+    SUM(
+        (bid.price*bid.quantity)*b.commission
+    ) as commission
+    FROM
+    trade t join order_ bid on t.bid_order_id = bid.id
+                    join order_ offer on t.offer_order_id = offer.id
+                    join account bid_a on bid.account = bid_a.number
+                    join account offer_a on offer.account = offer_a.number
+                    join instrument on bid.instrument_id = instrument.id
+                    join instrument_template on instrument.instrument_template_code = instrument_template.instrument_code
+                    inner join broker b on bid_a.broker_code = b.id or offer_a.broker_code = b.id
+                    inner join trader tr on bid_a.trader_code = tr.id or offer_a.trader_code = tr.id
+                    GROUP BY tr.first_name, b.name, b.commission::numeric(7,5)
+);
+
+-- Market volume (MV) - sum of trades
+-- Instruments on market (IM)
+-- Stock players (SP)
+-- Trades per instrument (TPI) = MV/IM
+-- Trades per player (TPP) = TPI / SP
+-- TPP > 100 Must to play stock
+-- TPP < 100 and TPP > 50 Default Stock
+-- TPP < 50 andd TPP > 25 You should play there if and only if there is
+-- an instrument(s) that traded only on this stock
+-- TPP < 25 This stock exchange is dying, you should not trade here.
+CREATE OR REPLACE function market_analitic(index1 numeric, index2 numeric, index3 numeric)
+RETURNS TABLE
+(
+    market varchar(100),
+    index float,
+    rating VARCHAR(180)
+)
+AS $BODY$
+BEGIN
+    RETURN QUERY (
+        SELECT index_calc.name, index_calc.index::float,
+        (CASE 
+            WHEN (index_calc.index > index1) THEN 'Must to play on the stock'
+            WHEN (index_calc.index < index1 and index_calc.index >= index2) THEN 'Default stock'
+            WHEN (index_calc.index < index2 and index_calc.index > index3) THEN 'You should play there if and only if you need to buy specific instrument'
+            WHEN (index_calc.index < index3) THEN 'This stock exchange is dying.'
+        END)::varchar(180) as rating
+        FROM 
+        (
+            SELECT mv.name, volume/(instrument_count*players_volume) as index 
+            FROM market_volumes mv inner join instruments_per_market ipm on mv.name = ipm.name
+            inner join players_on_market pon on ipm.name = pon.name
+        ) as index_calc
+    );
+END;
+$BODY$
+LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE VIEW market_volumes AS
+(
+    SELECT m.name, COUNT(t.match_id) as volume 
+    FROM
+    market m inner join instrument i on m.id = i.market_id
+    inner join order_ o on i.id = o.instrument_id
+    inner join trade t on t.bid_order_id = o.id
+    GROUP BY m.name
+);
+
+CREATE OR REPLACE VIEW instruments_per_market AS
+(
+    SELECT m.name, COUNT(i.id) as instrument_count 
+    FROM
+    market m inner join instrument i on m.id = i.market_id
+    GROUP by m.name
+);
+
+CREATE OR REPLACE VIEW players_on_market AS 
+(
+    SELECT m.name, SUM(1+
+    (SELECT COUNT(t.id) from trader t inner join account a1 on a1.trader_code = t.id
+    where a1.broker_code = a.broker_code)) as players_volume 
+    FROM
+    market m inner join market_broker mb on mb.market_id = m.id
+    inner join account a on mb.account_id = a.number
+    GROUP BY m.name
+);
